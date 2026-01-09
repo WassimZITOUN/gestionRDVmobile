@@ -3,187 +3,297 @@
 namespace App\DataFixtures;
 
 use App\Entity\Assistant;
-use App\Entity\RendezVous;
+use App\Entity\Etat;
+use App\Entity\Indisponibilite;
 use App\Entity\Medecin;
 use App\Entity\Patient;
-use App\Entity\Etat;
-use App\Repository\EtatRepository;
+use App\Entity\RendezVous;
 use Doctrine\Bundle\FixturesBundle\Fixture;
-use Doctrine\Common\DataFixtures\DependentFixtureInterface;
 use Doctrine\Persistence\ObjectManager;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 
-class AppFixtures extends Fixture implements DependentFixtureInterface
+class AppFixtures extends Fixture
 {
-    public function __construct(
-        private UserPasswordHasherInterface $passwordHasher,
-        private EtatRepository $etatRepository
-    ) {
+    private UserPasswordHasherInterface $passwordHasher;
+
+    public function __construct(UserPasswordHasherInterface $passwordHasher)
+    {
+        $this->passwordHasher = $passwordHasher;
     }
 
     public function load(ObjectManager $manager): void
     {
-        // Créer des médecins
-        $medecins = [];
-        $medecinData = [
-            ['email' => 'dr.wartel@clinic.fr', 'nom' => 'Wartel', 'prenom' => 'Marius'],
-            ['email' => 'dr.zitoun@clinic.fr', 'nom' => 'Zitoun', 'prenom' => 'Wassim'],
-            ['email' => 'dr.henni@clinic.fr', 'nom' => 'Henni', 'prenom' => 'Yasmine'],
+        // 1. Créer les états
+        $etats = $this->createEtats($manager);
+
+        // 2. Créer des médecins
+        $medecins = $this->createMedecins($manager);
+
+        // 3. Créer des patients
+        $patients = $this->createPatients($manager);
+
+        // 4. Créer des assistants
+        $assistants = $this->createAssistants($manager, $medecins);
+
+        // 5. Créer des rendez-vous
+        $this->createRendezVous($manager, $medecins, $patients, $etats);
+
+        // 6. Créer des indisponibilités
+        $this->createIndisponibilites($manager, $medecins);
+
+        $manager->flush();
+
+        echo "✅ Fixtures chargées avec succès!\n";
+        echo "📊 Résumé:\n";
+        echo "   - " . count($etats) . " états créés\n";
+        echo "   - " . count($medecins) . " médecins créés\n";
+        echo "   - " . count($patients) . " patients créés\n";
+        echo "   - " . count($assistants) . " assistants créés\n";
+        echo "\n🔐 Comptes de test:\n";
+        echo "   Médecin: medecin1@test.fr / password123\n";
+        echo "   Patient: patient1@test.fr / password123\n";
+        echo "   Assistant: assistant1@test.fr / password123\n";
+    }
+
+    private function createEtats(ObjectManager $manager): array
+    {
+        $etatsData = [
+            'demandé',
+            'confirmé',
+            'annulé',
+            'refusé',
+            'réalisé'
         ];
 
-        foreach ($medecinData as $data) {
+        $etats = [];
+        foreach ($etatsData as $libelle) {
+            $etat = new Etat();
+            $etat->setLibelle($libelle);
+            $manager->persist($etat);
+            $etats[$libelle] = $etat;
+        }
+
+        return $etats;
+    }
+
+    private function createMedecins(ObjectManager $manager): array
+    {
+        $medecinsData = [
+            ['nom' => 'Dupont', 'prenom' => 'Jean', 'email' => 'medecin1@test.fr'],
+            ['nom' => 'Martin', 'prenom' => 'Marie', 'email' => 'medecin2@test.fr'],
+            ['nom' => 'Bernard', 'prenom' => 'Pierre', 'email' => 'medecin3@test.fr'],
+            ['nom' => 'Dubois', 'prenom' => 'Sophie', 'email' => 'medecin4@test.fr'],
+        ];
+
+        $medecins = [];
+        foreach ($medecinsData as $data) {
             $medecin = new Medecin();
-            $medecin->setEmail($data['email']);
             $medecin->setNom($data['nom']);
             $medecin->setPrenom($data['prenom']);
+            $medecin->setEmail($data['email']);
             $medecin->setRoles(['ROLE_MEDECIN']);
-            
+
             $hashedPassword = $this->passwordHasher->hashPassword($medecin, 'password123');
             $medecin->setPassword($hashedPassword);
-            
+
             $manager->persist($medecin);
             $medecins[] = $medecin;
         }
 
-        // Créer des assistants associés aux médecins
-        $assistants = [];
-        $assistantData = [
-            ['email' => 'assistant.sophie@clinic.fr', 'nom' => 'Moreau', 'prenom' => 'Sophie', 'medecin_index' => 0],
-            ['email' => 'assistant.luc@clinic.fr', 'nom' => 'Lefevre', 'prenom' => 'Luc', 'medecin_index' => 0],
-            ['email' => 'assistant.isabelle@clinic.fr', 'nom' => 'Richard', 'prenom' => 'Isabelle', 'medecin_index' => 1],
-            ['email' => 'assistant.thomas@clinic.fr', 'nom' => 'Petit', 'prenom' => 'Thomas', 'medecin_index' => 2],
+        return $medecins;
+    }
+
+    private function createPatients(ObjectManager $manager): array
+    {
+        $patientsData = [
+            ['nom' => 'Leroy', 'prenom' => 'Thomas', 'email' => 'patient1@test.fr'],
+            ['nom' => 'Moreau', 'prenom' => 'Julie', 'email' => 'patient2@test.fr'],
+            ['nom' => 'Simon', 'prenom' => 'Lucas', 'email' => 'patient3@test.fr'],
+            ['nom' => 'Laurent', 'prenom' => 'Emma', 'email' => 'patient4@test.fr'],
+            ['nom' => 'Lefebvre', 'prenom' => 'Nathan', 'email' => 'patient5@test.fr'],
+            ['nom' => 'Michel', 'prenom' => 'Léa', 'email' => 'patient6@test.fr'],
+            ['nom' => 'Garcia', 'prenom' => 'Hugo', 'email' => 'patient7@test.fr'],
+            ['nom' => 'David', 'prenom' => 'Chloé', 'email' => 'patient8@test.fr'],
         ];
 
-        foreach ($assistantData as $data) {
-            $assistant = new Assistant();
-            $assistant->setEmail($data['email']);
-            $assistant->setNom($data['nom']);
-            $assistant->setPrenom($data['prenom']);
-            $assistant->setRoles(['ROLE_ASSISTANT']);
-            $assistant->setMedecin($medecins[$data['medecin_index']]);
-            
-            $hashedPassword = $this->passwordHasher->hashPassword($assistant, 'password123');
-            $assistant->setPassword($hashedPassword);
-            
-            $manager->persist($assistant);
-            $assistants[] = $assistant;
-        }
-
-        // Créer des patients
         $patients = [];
-        $patientData = [
-            ['email' => 'jean.patient@mail.fr', 'nom' => 'Patient', 'prenom' => 'Jean'],
-            ['email' => 'marie.patient@mail.fr', 'nom' => 'Dupuis', 'prenom' => 'Marie'],
-            ['email' => 'marc.patient@mail.fr', 'nom' => 'Leclerc', 'prenom' => 'Marc'],
-            ['email' => 'anne.patient@mail.fr', 'nom' => 'Moreau', 'prenom' => 'Anne'],
-            ['email' => 'paul.patient@mail.fr', 'nom' => 'Fournier', 'prenom' => 'Paul'],
-            ['email' => 'claire.patient@mail.fr', 'nom' => 'Girard', 'prenom' => 'Claire'],
-        ];
-
-        foreach ($patientData as $data) {
+        foreach ($patientsData as $data) {
             $patient = new Patient();
-            $patient->setEmail($data['email']);
             $patient->setNom($data['nom']);
             $patient->setPrenom($data['prenom']);
+            $patient->setEmail($data['email']);
             $patient->setRoles(['ROLE_PATIENT']);
-            
+
             $hashedPassword = $this->passwordHasher->hashPassword($patient, 'password123');
             $patient->setPassword($hashedPassword);
-            
+
             $manager->persist($patient);
             $patients[] = $patient;
         }
 
-        $manager->flush();
-
-        // Créer des rendez-vous après que les entités soient persistées
-        $rendezvousData = [
-            // Rendez-vous du patient 0 avec médecin 0
-            [
-                'patient_index' => 0,
-                'medecin_index' => 0,
-                'datetime' => (new \DateTime())->add(new \DateInterval('P1D')),
-                'etat' => 'demande',
-            ],
-            [
-                'patient_index' => 0,
-                'medecin_index' => 0,
-                'datetime' => (new \DateTime())->add(new \DateInterval('P3D')),
-                'etat' => 'confirme',
-            ],
-            // Rendez-vous du patient 1 avec médecin 0
-            [
-                'patient_index' => 1,
-                'medecin_index' => 0,
-                'datetime' => (new \DateTime())->add(new \DateInterval('P2D')),
-                'etat' => 'demande',
-            ],
-            // Rendez-vous du patient 2 avec médecin 1
-            [
-                'patient_index' => 2,
-                'medecin_index' => 1,
-                'datetime' => (new \DateTime())->add(new \DateInterval('P5D')),
-                'etat' => 'confirme',
-            ],
-            [
-                'patient_index' => 2,
-                'medecin_index' => 1,
-                'datetime' => (new \DateTime())->add(new \DateInterval('P7D')),
-                'etat' => 'realise',
-            ],
-            // Rendez-vous du patient 3 avec médecin 2
-            [
-                'patient_index' => 3,
-                'medecin_index' => 2,
-                'datetime' => (new \DateTime())->add(new \DateInterval('P4D')),
-                'etat' => 'refuse',
-            ],
-            // Rendez-vous du patient 4 avec médecin 0
-            [
-                'patient_index' => 4,
-                'medecin_index' => 0,
-                'datetime' => (new \DateTime())->add(new \DateInterval('P6D')),
-                'etat' => 'confirme',
-            ],
-            // Rendez-vous du patient 5 avec médecin 1
-            [
-                'patient_index' => 5,
-                'medecin_index' => 1,
-                'datetime' => (new \DateTime())->add(new \DateInterval('P2D')),
-                'etat' => 'demande',
-            ],
-            [
-                'patient_index' => 5,
-                'medecin_index' => 1,
-                'datetime' => (new \DateTime())->add(new \DateInterval('P8D')),
-                'etat' => 'annule',
-            ],
-        ];
-
-        foreach ($rendezvousData as $data) {
-            $rv = new RendezVous();
-            $rv->setPatient($patients[$data['patient_index']]);
-            $rv->setMedecin($medecins[$data['medecin_index']]);
-            
-            $start = $data['datetime'];
-            $end = (clone $start)->add(new \DateInterval('PT30M'));
-            $rv->setDebut($start);
-            $rv->setFin($end);
-            
-            // Récupérer l'entité Etat via le repository
-            $etat = $this->etatRepository->findOneBy(['libelle' => $data['etat']]);
-            $rv->setEtat($etat);
-
-            $manager->persist($rv);
-        }
-
-        $manager->flush();
+        return $patients;
     }
 
-    public function getDependencies(): array
+    private function createAssistants(ObjectManager $manager, array $medecins): array
     {
-        return [
-            EtatFixtures::class,
+        $assistantsData = [
+            ['nom' => 'Petit', 'prenom' => 'Alice', 'email' => 'assistant1@test.fr', 'medecin_index' => 0],
+            ['nom' => 'Robert', 'prenom' => 'Marc', 'email' => 'assistant2@test.fr', 'medecin_index' => 1],
         ];
+
+        $assistants = [];
+        foreach ($assistantsData as $data) {
+            $assistant = new Assistant();
+            $assistant->setNom($data['nom']);
+            $assistant->setPrenom($data['prenom']);
+            $assistant->setEmail($data['email']);
+            $assistant->setRoles(['ROLE_ASSISTANT']);
+            $assistant->setMedecin($medecins[$data['medecin_index']]);
+
+            $hashedPassword = $this->passwordHasher->hashPassword($assistant, 'password123');
+            $assistant->setPassword($hashedPassword);
+
+            $manager->persist($assistant);
+            $assistants[] = $assistant;
+        }
+
+        return $assistants;
+    }
+
+    private function createRendezVous(ObjectManager $manager, array $medecins, array $patients, array $etats): void
+    {
+        $now = new \DateTime();
+
+        // RDV demandé (aujourd'hui + 5 jours, 9h-10h)
+        $rdv1 = new RendezVous();
+        $debut1 = (clone $now)->modify('+5 days')->setTime(9, 0);
+        $rdv1->setDebut($debut1);
+        $rdv1->setFin((clone $debut1)->modify('+1 hour'));
+        $rdv1->setMedecin($medecins[0]);
+        $rdv1->setPatient($patients[0]);
+        $rdv1->setEtat($etats['demandé']);
+        $manager->persist($rdv1);
+
+        // RDV demandé (aujourd'hui + 7 jours, 14h-15h)
+        $rdv2 = new RendezVous();
+        $debut2 = (clone $now)->modify('+7 days')->setTime(14, 0);
+        $rdv2->setDebut($debut2);
+        $rdv2->setFin((clone $debut2)->modify('+1 hour'));
+        $rdv2->setMedecin($medecins[1]);
+        $rdv2->setPatient($patients[1]);
+        $rdv2->setEtat($etats['demandé']);
+        $manager->persist($rdv2);
+
+        // RDV confirmé (aujourd'hui + 3 jours, 10h-11h)
+        $rdv3 = new RendezVous();
+        $debut3 = (clone $now)->modify('+3 days')->setTime(10, 0);
+        $rdv3->setDebut($debut3);
+        $rdv3->setFin((clone $debut3)->modify('+1 hour'));
+        $rdv3->setMedecin($medecins[0]);
+        $rdv3->setPatient($patients[2]);
+        $rdv3->setEtat($etats['confirmé']);
+        $manager->persist($rdv3);
+
+        // RDV confirmé (aujourd'hui + 4 jours, 15h-16h)
+        $rdv4 = new RendezVous();
+        $debut4 = (clone $now)->modify('+4 days')->setTime(15, 0);
+        $rdv4->setDebut($debut4);
+        $rdv4->setFin((clone $debut4)->modify('+1 hour'));
+        $rdv4->setMedecin($medecins[2]);
+        $rdv4->setPatient($patients[3]);
+        $rdv4->setEtat($etats['confirmé']);
+        $manager->persist($rdv4);
+
+        // RDV confirmé (demain, 9h-10h)
+        $rdv5 = new RendezVous();
+        $debut5 = (clone $now)->modify('+1 day')->setTime(9, 0);
+        $rdv5->setDebut($debut5);
+        $rdv5->setFin((clone $debut5)->modify('+1 hour'));
+        $rdv5->setMedecin($medecins[1]);
+        $rdv5->setPatient($patients[4]);
+        $rdv5->setEtat($etats['confirmé']);
+        $manager->persist($rdv5);
+
+        // RDV annulé (hier, 14h-15h)
+        $rdv6 = new RendezVous();
+        $debut6 = (clone $now)->modify('-1 day')->setTime(14, 0);
+        $rdv6->setDebut($debut6);
+        $rdv6->setFin((clone $debut6)->modify('+1 hour'));
+        $rdv6->setMedecin($medecins[0]);
+        $rdv6->setPatient($patients[5]);
+        $rdv6->setEtat($etats['annulé']);
+        $manager->persist($rdv6);
+
+        // RDV refusé (aujourd'hui + 10 jours, 11h-12h)
+        $rdv7 = new RendezVous();
+        $debut7 = (clone $now)->modify('+10 days')->setTime(11, 0);
+        $rdv7->setDebut($debut7);
+        $rdv7->setFin((clone $debut7)->modify('+1 hour'));
+        $rdv7->setMedecin($medecins[3]);
+        $rdv7->setPatient($patients[6]);
+        $rdv7->setEtat($etats['refusé']);
+        $manager->persist($rdv7);
+
+        // RDV réalisé (il y a 5 jours, 10h-11h)
+        $rdv8 = new RendezVous();
+        $debut8 = (clone $now)->modify('-5 days')->setTime(10, 0);
+        $rdv8->setDebut($debut8);
+        $rdv8->setFin((clone $debut8)->modify('+1 hour'));
+        $rdv8->setMedecin($medecins[1]);
+        $rdv8->setPatient($patients[7]);
+        $rdv8->setEtat($etats['réalisé']);
+        $manager->persist($rdv8);
+
+        // RDV réalisé (il y a 3 jours, 16h-17h)
+        $rdv9 = new RendezVous();
+        $debut9 = (clone $now)->modify('-3 days')->setTime(16, 0);
+        $rdv9->setDebut($debut9);
+        $rdv9->setFin((clone $debut9)->modify('+1 hour'));
+        $rdv9->setMedecin($medecins[2]);
+        $rdv9->setPatient($patients[0]);
+        $rdv9->setEtat($etats['réalisé']);
+        $manager->persist($rdv9);
+
+        // RDV demandé (aujourd'hui + 2 jours, 11h-12h)
+        $rdv10 = new RendezVous();
+        $debut10 = (clone $now)->modify('+2 days')->setTime(11, 0);
+        $rdv10->setDebut($debut10);
+        $rdv10->setFin((clone $debut10)->modify('+1 hour'));
+        $rdv10->setMedecin($medecins[3]);
+        $rdv10->setPatient($patients[1]);
+        $rdv10->setEtat($etats['demandé']);
+        $manager->persist($rdv10);
+    }
+
+    private function createIndisponibilites(ObjectManager $manager, array $medecins): void
+    {
+        $now = new \DateTime();
+
+        // Indisponibilité 1: Dr Dupont en congés dans 10 jours (toute la journée)
+        $indispo1 = new Indisponibilite();
+        $debut1 = (clone $now)->modify('+10 days')->setTime(0, 0);
+        $indispo1->setDebut($debut1);
+        $indispo1->setFin((clone $debut1)->modify('+1 day')->setTime(23, 59));
+        $indispo1->setMedecin($medecins[0]);
+        $indispo1->setMotif('Congés annuels');
+        $manager->persist($indispo1);
+
+        // Indisponibilité 2: Dr Martin formation demain après-midi
+        $indispo2 = new Indisponibilite();
+        $debut2 = (clone $now)->modify('+1 day')->setTime(14, 0);
+        $indispo2->setDebut($debut2);
+        $indispo2->setFin((clone $debut2)->setTime(18, 0));
+        $indispo2->setMedecin($medecins[1]);
+        $indispo2->setMotif('Formation continue');
+        $manager->persist($indispo2);
+
+        // Indisponibilité 3: Dr Bernard réunion dans 5 jours
+        $indispo3 = new Indisponibilite();
+        $debut3 = (clone $now)->modify('+5 days')->setTime(13, 0);
+        $indispo3->setDebut($debut3);
+        $indispo3->setFin((clone $debut3)->modify('+2 hours'));
+        $indispo3->setMedecin($medecins[2]);
+        $indispo3->setMotif('Réunion d\'équipe');
+        $manager->persist($indispo3);
     }
 }
