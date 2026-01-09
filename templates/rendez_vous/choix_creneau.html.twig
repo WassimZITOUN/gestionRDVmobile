@@ -1,29 +1,113 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Créneaux disponibles{% endblock %}
+{% block title %}Sélection du créneau horaire{% endblock %}
 
 {% block body %}
-<h2>Créneaux disponibles</h2>
+<div class="container content-wrapper" style="max-width: 700px;">
+    {# Breadcrumb for navigation #}
+    {{ include('components/breadcrumb.html.twig', {
+      items: [
+        {label: 'Accueil', href: path('homepage')},
+        {label: 'Nouveau rendez-vous', href: path('app_rendez_vous_new')},
+        {label: 'Choix du créneau'}
+      ]
+    }) }}
 
-{% if creneaux is empty %}
-    <p>Aucun créneau disponible pour cette date.</p>
-{% else %}
-    <form method="post" data-turbo="false" class="creneaux-form">
-        <input type="hidden" name="_token" value="{{ csrf_token('choix_creneau') }}">
-        <input type="hidden" name="date" value="{{ rendezVous.debut|date('Y-m-d') }}">
-        <input type="hidden" name="medecin" value="{{ rendezVous.medecin.id }}">
+    <h1 style="margin-bottom: 24px;">Sélection du créneau horaire</h1>
 
-        <div class="creneaux-grid" style="display:flex; flex-wrap:wrap; gap:10px;">
-            {% for c in creneaux %}
-                <button type="submit" 
-                        name="creneau" 
-                        value="{{ c }}" 
-                        class="creneau-btn"
-                        style="flex: 0 0 49%; text-align:center;">
-                    {{ c }}
-                </button>
-            {% endfor %}
+    {# Récapitulatif - card with summary style #}
+    <div class="card card-summary" style="margin-bottom: 24px;">
+        <h2 style="margin-top: 0; margin-bottom: 16px; color: var(--primary); font-size: 1.2rem;">Récapitulatif</h2>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+            <div>
+                <span class="text-meta">Date sélectionnée</span>
+                <div style="font-size: 1.3rem; font-weight: 600; margin-top: 4px;">
+                    {{ rendezVous.debut|date('d/m/Y') }}
+                </div>
+            </div>
+            <div>
+                <span class="text-meta">Médecin</span>
+                <div style="font-size: 1.3rem; font-weight: 600; margin-top: 4px;">
+                    Dr {{ rendezVous.medecin.nom }}
+                </div>
+            </div>
         </div>
-    </form>
-{% endif %}
+    </div>
+
+    {% if creneaux is empty %}
+        {# No slots available - improved message with helpful actions #}
+        <div class="alert alert-warning" role="alert">
+            <strong>⚠️ Aucun créneau disponible</strong>
+            <p>Malheureusement, aucun créneau n'est disponible pour cette date avec ce médecin.</p>
+            <p style="margin: 12px 0 0 0; font-size: 0.9rem;">
+                💡 <strong>Suggestions :</strong>
+            </p>
+            <ul style="margin: 8px 0 0 20px; padding-left: 0; list-style-position: inside;">
+                <li>Choisir une autre date</li>
+                <li>Choisir un autre médecin</li>
+                <li>Consulter les jours suivants</li>
+            </ul>
+        </div>
+
+        <div class="flex-row" style="margin-top: 20px;">
+            {{ include('components/button.html.twig', {
+                href: path('app_rendez_vous_new'),
+                label: 'Retour',
+                icon: '←',
+                variant: 'secondary'
+            }) }}
+            {{ include('components/button.html.twig', {
+                href: path('app_rendez_vous_new'),
+                label: 'Recommencer',
+                icon: '↺',
+                variant: 'primary'
+            }) }}
+        </div>
+    {% else %}
+        {# Slot selection form - Accessible with fieldset #}
+        <form method="post" data-turbo="false" class="creneaux-form">
+            <input type="hidden" name="_token" value="{{ csrf_token('choix_creneau') }}">
+            <input type="hidden" name="date" value="{{ rendezVous.debut|date('Y-m-d') }}">
+            <input type="hidden" name="medecin" value="{{ rendezVous.medecin.id }}">
+
+            <fieldset style="border: none; padding: 0; margin: 0;">
+                <legend class="label-block" style="margin-bottom: 16px;">Choisissez un créneau horaire :</legend>
+
+                <div class="creneaux-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 24px;">
+                    {% for c in creneaux %}
+                        <button type="submit"
+                                name="creneau"
+                                value="{{ c }}"
+                                class="creneau-btn"
+                                aria-label="Créneau de {{ c }} à {{ c|date_modify('+1 hour')|date('H:i') }}">
+                            <div style="font-size: 1.4rem;">{{ c }}</div>
+                        </button>
+                    {% endfor %}
+                </div>
+
+                <p class="text-meta" style="margin-bottom: 24px;">
+                    ℹ️ Chaque créneau dure 1 heure. Cliquez sur l'heure souhaitée pour finaliser votre rendez-vous.
+                </p>
+            </fieldset>
+
+            <div class="flex-row">
+                {{ include('components/button.html.twig', {
+                    href: path('app_rendez_vous_new'),
+                    label: 'Retour',
+                    icon: '←',
+                    variant: 'secondary'
+                }) }}
+            </div>
+        </form>
+    {% endif %}
+</div>
+
+<style>
+/* Responsive adjustments for slot grid */
+@media (max-width: 480px) {
+    .creneaux-grid {
+        grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)) !important;
+    }
+}
+</style>
 {% endblock %}

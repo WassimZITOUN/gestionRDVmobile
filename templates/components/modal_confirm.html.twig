@@ -1,0 +1,71 @@
+{#
+  Composant Modal Confirm - Modale de confirmation accessible (remplace confirm() JS)
+
+  Usage:
+    <button type="button" class="btn btn-danger" onclick="openModal('cancel-confirm')">
+      Annuler le rendez-vous
+    </button>
+    {{ include('components/modal_confirm.html.twig', {
+      id: 'cancel-confirm',
+      title: 'Annuler le rendez-vous',
+      message: 'Êtes-vous sûr de vouloir annuler ce rendez-vous ? Cette action est irréversible.',
+      confirm_label: 'Annuler le rendez-vous',
+      cancel_label: 'Conserver',
+      form_action: path('mes_rendez_vous_cancel', {id: rdv.id}),
+      confirm_variant: 'danger'
+    }) }}
+
+  Params:
+    - id: ID unique pour la modale (requis)
+    - title: Titre de la modale (requis)
+    - message: Message explicatif (requis)
+    - confirm_label: Label du bouton de confirmation (requis)
+    - cancel_label: Label du bouton d'annulation (default: 'Annuler')
+    - form_action: URL de l'action POST (requis)
+    - confirm_variant: Variante du bouton confirm (default: 'danger')
+    - csrf_token: Token CSRF personnalisé (optionnel)
+#}
+<div id="{{ id }}" class="modal" role="dialog" aria-modal="true" aria-labelledby="{{ id }}-title" style="display: none;">
+  <div class="modal-backdrop" onclick="closeModal('{{ id }}')"></div>
+  <div class="modal-content">
+    <h2 id="{{ id }}-title">{{ title }}</h2>
+    <p>{{ message }}</p>
+    <form method="post" action="{{ form_action }}">
+      {% if csrf_token is defined %}
+        <input type="hidden" name="_token" value="{{ csrf_token }}">
+      {% endif %}
+      <div class="flex-row" style="justify-content: flex-end;">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('{{ id }}')">
+          {{ cancel_label|default('Annuler') }}
+        </button>
+        <button type="submit" class="btn btn-{{ confirm_variant|default('danger') }}">
+          {{ confirm_label }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% if not modal_script_loaded is defined %}
+<script>
+function openModal(id) {
+  const modal = document.getElementById(id);
+  if (modal) {
+    modal.style.display = 'flex';
+    const firstButton = modal.querySelector('button[type="button"]');
+    if (firstButton) firstButton.focus();
+  }
+}
+function closeModal(id) {
+  const modal = document.getElementById(id);
+  if (modal) modal.style.display = 'none';
+}
+// Close on Escape key
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    document.querySelectorAll('.modal').forEach(m => m.style.display = 'none');
+  }
+});
+</script>
+{% set modal_script_loaded = true %}
+{% endif %}

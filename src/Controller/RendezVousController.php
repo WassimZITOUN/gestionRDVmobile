@@ -102,6 +102,16 @@ public function new(
             ]);
         }
 
+        // Vérifier que la date n'est pas dans le passé
+        $today = new \DateTime();
+        $today->setTime(0, 0, 0);
+        if ($date < $today) {
+            $this->addFlash('danger', 'Veuillez sélectionner une date future.');
+            return $this->render('rendez_vous/new.html.twig', [
+                'form' => $form,
+            ]);
+        }
+
         if ($form->isValid()) {
             $creneauxPossibles = [
             '09:00','10:00',

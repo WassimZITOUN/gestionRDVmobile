@@ -1,0 +1,35 @@
+{#
+  Composant Button - Bouton ou lien stylisé de manière cohérente
+
+  Usage:
+    {{ include('components/button.html.twig', {
+      href: path('...'),
+      label: 'Retour',
+      icon: '←',
+      variant: 'secondary',
+      size: 'sm'
+    }) }}
+
+  Params:
+    - href: Si défini, crée un <a>, sinon un <button>
+    - label: Texte du bouton (requis)
+    - icon: Emoji ou icon optionnel
+    - variant: primary|secondary|success|danger|warning|info|outline (default: primary)
+    - size: sm|lg (optionnel)
+    - type: button|submit|reset (pour <button> seulement, default: button)
+    - disabled: true|false (optionnel)
+    - onclick: Fonction JS onclick (optionnel)
+    - aria_label: Label ARIA personnalisé (optionnel)
+#}
+{% set classes = 'btn btn-' ~ (variant|default('primary')) %}
+{% if size is defined %}{% set classes = classes ~ ' btn-' ~ size %}{% endif %}
+
+{% if href is defined %}
+<a href="{{ href }}" class="{{ classes }}"{% if aria_label is defined %} aria-label="{{ aria_label }}"{% endif %}>
+  {% if icon is defined %}<span>{{ icon }}</span> {% endif %}{{ label }}
+</a>
+{% else %}
+<button type="{{ type|default('button') }}" class="{{ classes }}"{% if disabled is defined %} disabled{% endif %}{% if onclick is defined %} onclick="{{ onclick }}"{% endif %}{% if aria_label is defined %} aria-label="{{ aria_label }}"{% endif %}>
+  {% if icon is defined %}<span>{{ icon }}</span> {% endif %}{{ label }}
+</button>
+{% endif %}

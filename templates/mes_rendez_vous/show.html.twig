@@ -7,70 +7,107 @@
 
     <h1 class="mb-4">Détail du rendez-vous</h1>
 
-    <div class="card" style="padding: 20px;">
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+    {# Afficher l'état avec un badge visuel #}
+    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px;">
+        <span style="color: var(--muted); font-size: 0.9rem;">État :</span>
+        <span class="badge
+            {% if rendez_vou.etat.libelle == 'demandé' %}badge-info{% endif %}
+            {% if rendez_vou.etat.libelle == 'confirmé' %}badge-success{% endif %}
+            {% if rendez_vou.etat.libelle in ['annulé', 'refusé'] %}badge-danger{% endif %}
+            {% if rendez_vou.etat.libelle == 'réalisé' %}badge-primary{% endif %}
+        " style="padding: 8px 12px; font-size: 1rem; font-weight: 600;">
+            {{ rendez_vou.etat.libelle|upper }}
+        </span>
+    </div>
+
+    {# Informations principales en grille #}
+    <div class="card" style="padding: 24px; margin-bottom: 24px;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
             
-            <div>
-                <strong>Date</strong><br>
-                {{ rendez_vou.debut|date('d/m/Y') }}
+            <div style="border-right: 1px solid var(--border-light); padding-right: 24px;">
+                <div style="margin-bottom: 20px;">
+                    <span style="color: var(--muted); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">📅 Date</span>
+                    <div style="font-size: 1.5rem; font-weight: 700; margin-top: 6px; color: var(--text);">
+                        {{ rendez_vou.debut|date('d/m/Y') }}
+                    </div>
+                </div>
+
+                <div>
+                    <span style="color: var(--muted); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">🕐 Horaire</span>
+                    <div style="font-size: 1.3rem; font-weight: 600; margin-top: 6px; color: var(--primary);">
+                        {{ rendez_vou.debut|date('H:i') }} – {{ rendez_vou.fin|date('H:i') }}
+                    </div>
+                </div>
             </div>
 
-            <div>
-                <strong>Heure</strong><br>
-                {{ rendez_vou.debut|date('H:i') }} – {{ rendez_vou.fin|date('H:i') }}
-            </div>
+            <div style="padding-left: 0;">
+                <div style="margin-bottom: 20px;">
+                    <span style="color: var(--muted); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">👨‍⚕️ Médecin</span>
+                    <div style="font-size: 1.3rem; font-weight: 600; margin-top: 6px;">
+                        Dr {{ rendez_vou.medecin.nom }}
+                    </div>
+                </div>
 
-            <div>
-                <strong>Médecin</strong><br>
-                Dr {{ rendez_vou.medecin.nom }}
-            </div>
-
-            <div>
-                <strong>Patient</strong><br>
-                {{ rendez_vou.patient.prenom }} {{ rendez_vou.patient.nom }}
-            </div>
-
-            <div>
-                <strong>État</strong><br>
-                <span class="badge
-                    {% if rendez_vou.etat.libelle == 'demandé' %}badge-info{% endif %}
-                    {% if rendez_vou.etat.libelle == 'confirmé' %}badge-success{% endif %}
-                    {% if rendez_vou.etat.libelle in ['annulé', 'refusé'] %}badge-danger{% endif %}
-                    {% if rendez_vou.etat.libelle == 'realisé' %}badge-primary{% endif %}
-                ">
-                    {{ rendez_vou.etat.libelle|capitalize }}
-                </span>
+                <div>
+                    <span style="color: var(--muted); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">👤 Patient</span>
+                    <div style="font-size: 1.1rem; font-weight: 500; margin-top: 6px;">
+                        {{ rendez_vou.patient.prenom }} {{ rendez_vou.patient.nom }}
+                    </div>
+                </div>
             </div>
 
         </div>
     </div>
 
-    <div class="mt-4" style="display:flex; gap:10px; flex-wrap:wrap;">
+    {# Actions contextuelles #}
+    <div class="card" style="padding: 20px; background: var(--bg-light);">
+        <h3 style="margin-top: 0; margin-bottom: 16px; color: var(--text);">Actions disponibles</h3>
+        
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
 
-        {# 🔧 Modifier : uniquement si état = demandé #}
-        {% if rendez_vou.etat.libelle == 'demandé' %}
-            <a href="{{ path('app_mes_rendez_vous_edit', { id: rendez_vou.id }) }}"
-               class="btn btn-warning">
-                Modifier le rendez-vous
-            </a>
-        {% endif %}
-
-        {# ❌ Annuler : si pas réalisé / annulé / refusé #}
-        {% if rendez_vou.etat.libelle not in ['realisé', 'annulé', 'refusé'] %}
-            <form method="post"
-                  action="{{ path('app_mes_rendez_vous_cancel', { id: rendez_vou.id }) }}"
-                  onsubmit="return confirm('Êtes-vous sûr de vouloir annuler ce rendez-vous ?');">
-                <button class="btn btn-danger">
-                    Annuler le rendez-vous
+            {# 🔧 Modifier : uniquement si état = demandé #}
+            {% if rendez_vou.etat.libelle == 'demandé' %}
+                <a href="{{ path('app_mes_rendez_vous_edit', { id: rendez_vou.id }) }}"
+                   class="btn btn-warning" style="display: inline-flex; align-items: center; gap: 6px;">
+                    ✏️ Modifier le rendez-vous
+                </a>
+            {% else %}
+                <button class="btn" style="background: var(--border-light); color: var(--muted); cursor: not-allowed;" disabled>
+                    ✏️ Modification non disponible
                 </button>
-            </form>
-        {% endif %}
+            {% endif %}
 
-        <a href="{{ path('app_mes_rendez_vous') }}" class="btn btn-secondary">
-            Retour à mes rendez-vous
-        </a>
-
+            {# ❌ Annuler : si pas réalisé / annulé / refusé #}
+            {% if rendez_vou.etat.libelle not in ['réalisé', 'annulé', 'refusé'] %}
+                <form method="post"
+                      action="{{ path('app_mes_rendez_vous_cancel', { id: rendez_vou.id }) }}"
+                      onsubmit="return confirm('Êtes-vous sûr de vouloir annuler ce rendez-vous ? Cette action est irréversible.');"
+                      style="display: inline;">
+                    <button class="btn btn-danger" style="display: inline-flex; align-items: center; gap: 6px;">
+                        ❌ Annuler le rendez-vous
+                    </button>
+                </form>
+            {% else %}
+                {% if rendez_vou.etat.libelle == 'annulé' %}
+                    <span class="alert alert-danger" style="display: inline-block; padding: 8px 12px; margin: 0; border-radius: 6px;">
+                        ❌ Ce rendez-vous a été annulé
+                    </span>
+                {% elseif rendez_vou.etat.libelle == 'refusé' %}
+                    <span class="alert alert-danger" style="display: inline-block; padding: 8px 12px; margin: 0; border-radius: 6px;">
+                        ❌ Ce rendez-vous a été refusé
+                    </span>
+                {% elseif rendez_vou.etat.libelle == 'réalisé' %}
+                    <span class="alert alert-primary" style="display: inline-block; padding: 8px 12px; margin: 0; border-radius: 6px;">
+                        ✓ Ce rendez-vous a été réalisé
+                    </span>
+                {% endif %}
+            {% endif %}
+        </div>
     </div>
+
+    <a href="{{ path('app_mes_rendez_vous') }}" class="btn btn-secondary" style="margin-top: 20px; display: inline-flex; align-items: center; gap: 6px;">
+        ← Retour à mes rendez-vous
+    </a>
 
 </div>
 {% endblock %}

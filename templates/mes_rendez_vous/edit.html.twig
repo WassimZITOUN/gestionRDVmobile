@@ -5,21 +5,75 @@
 {% block body %}
 <div class="container content-wrapper" style="max-width:700px">
 
-    <h1 class="mb-3">Modifier le rendez-vous</h1>
+    <h1 class="mb-4">Modifier le rendez-vous</h1>
 
-    <div class="alert alert-info">
-        Modifier un rendez-vous implique une nouvelle demande de confirmation
-        auprès du médecin.
+    <div class="alert alert-info" style="display: flex; align-items: flex-start; gap: 12px;">
+        <span style="font-size: 1.3rem;">ℹ️</span>
+        <div>
+            <strong>Modification en cours</strong>
+            <p style="margin: 6px 0 0 0;">Modifier un rendez-vous implique une nouvelle demande de confirmation auprès du médecin. L'état passera à "demandé" en attente de confirmation.</p>
+        </div>
     </div>
 
-    <h1>Modifier le rendez-vous</h1>
+    <div class="card mb-4" style="background: var(--bg-light); border-left: 4px solid var(--accent); padding: 20px;">
+        <h3 style="margin-top: 0; color: var(--accent);">Rendez-vous actuel</h3>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+            <div>
+                <span style="color: var(--muted); font-size: 0.9rem;">Date</span>
+                <div style="font-weight: 600; margin-top: 4px;">{{ rendez_vou.debut|date('d/m/Y') }}</div>
+            </div>
+            <div>
+                <span style="color: var(--muted); font-size: 0.9rem;">Heure</span>
+                <div style="font-weight: 600; margin-top: 4px;">{{ rendez_vou.debut|date('H:i') }} – {{ rendez_vou.fin|date('H:i') }}</div>
+            </div>
+            <div>
+                <span style="color: var(--muted); font-size: 0.9rem;">Médecin</span>
+                <div style="font-weight: 600; margin-top: 4px;">Dr {{ rendez_vou.medecin.nom }}</div>
+            </div>
+            <div>
+                <span style="color: var(--muted); font-size: 0.9rem;">État</span>
+                <div style="font-weight: 600; margin-top: 4px;">
+                    <span class="badge {% if rendez_vou.etat.libelle == 'demandé' %}badge-info{% endif %}{% if rendez_vou.etat.libelle == 'confirmé' %}badge-success{% endif %}">
+                        {{ rendez_vou.etat.libelle|capitalize }}
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
 
-    {{ form_start(form, { attr: { 'data-turbo': 'false' } }) }}
-        <button type="submit" class="btn btn-primary">
-            Voir les créneaux disponibles
-        </button><br><br>
-        {{ form_row(form.medecin) }}
-    {{ form_end(form) }}
+    <div class="card" style="padding: 20px;">
+        <h3 style="margin-top: 0; margin-bottom: 20px;">Nouvelles informations</h3>
+        
+        {{ form_start(form, { attr: { 'data-turbo': 'false', 'class': 'form-group' } }) }}
+            <div style="margin-bottom: 20px;">
+                {{ form_row(form.debut, { 
+                    attr: { 
+                        class: 'form-control',
+                        style: 'width: 100%; padding: 10px; border: 1px solid var(--border-light); border-radius: 6px; font-size: 1rem;'
+                    },
+                    label_attr: { style: 'display: block; font-weight: 600; margin-bottom: 8px; color: var(--text);' }
+                }) }}
+            </div>
 
+            <div style="margin-bottom: 20px;">
+                {{ form_row(form.medecin, { 
+                    attr: { 
+                        class: 'form-control',
+                        style: 'width: 100%; padding: 10px; border: 1px solid var(--border-light); border-radius: 6px; font-size: 1rem;'
+                    },
+                    label_attr: { style: 'display: block; font-weight: 600; margin-bottom: 8px; color: var(--text);' }
+                }) }}
+            </div>
+
+            <div style="display: flex; gap: 12px; margin-top: 24px;">
+                <button type="submit" class="btn btn-primary" style="flex: 1;">
+                    → Voir les créneaux disponibles
+                </button>
+                <a href="{{ path('app_mes_rendez_vous') }}" class="btn btn-secondary">Annuler</a>
+            </div>
+        {{ form_end(form) }}
+    </div>
+
+</div>
 {% endblock %}
 

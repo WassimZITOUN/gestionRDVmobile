@@ -1,17 +1,58 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Nouveau Rendez-vous{% endblock %}
+{% block title %}Prendre un rendez-vous{% endblock %}
 
 {% block body %}
-   {{ form_start(form, {
-        attr: { 'data-turbo': 'false' }
-    }) }}
-        {{ form_row(form.debut) }}
-        {{ form_row(form.medecin) }}
+<div class="container content-wrapper" style="max-width: 700px;">
+    <h1 class="mb-4">Prendre un rendez-vous</h1>
 
-        <button type="submit" class="btn btn-primary">
-            Voir les créneaux disponibles
-        </button>
-    {{ form_end(form) }}
+    <div class="card mb-4" style="background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%); color: white; padding: 20px; border-radius: 8px;">
+        <h3 style="margin-top: 0; margin-bottom: 12px;">Étape 1 sur 2</h3>
+        <p style="margin: 0;">Sélectionnez une date et un médecin pour voir les créneaux disponibles</p>
+    </div>
 
+    <div class="card" style="padding: 24px;">
+        {{ form_start(form, {
+            attr: { 'data-turbo': 'false' }
+        }) }}
+            <div style="margin-bottom: 24px;">
+                <label style="display: block; font-weight: 600; margin-bottom: 8px; color: var(--text);">
+                    {{ form.debut.vars.label }}
+                </label>
+                {{ form_widget(form.debut, {
+                    attr: { 
+                        class: 'js-datepicker form-control',
+                        id: 'form_debut',
+                        style: 'width: 100%; padding: 10px; border: 1px solid var(--border-light); border-radius: 6px; font-size: 1rem;',
+                        min: 'today'
+                    }
+                }) }}
+                <small style="color: var(--muted); margin-top: 4px; display: block;">Veuillez sélectionner une date future</small>
+                {{ form_errors(form.debut) }}
+            </div>
+
+            <div style="margin-bottom: 24px;">
+                <label style="display: block; font-weight: 600; margin-bottom: 8px; color: var(--text);">
+                    {{ form.medecin.vars.label }}
+                </label>
+                {{ form_widget(form.medecin, {
+                    attr: {
+                        class: 'form-control',
+                        style: 'width: 100%; padding: 10px; border: 1px solid var(--border-light); border-radius: 6px; font-size: 1rem;'
+                    }
+                }) }}
+                <small style="color: var(--muted); margin-top: 4px; display: block;">Sélectionnez le médecin que vous souhaitez consulter</small>
+                {{ form_errors(form.medecin) }}
+            </div>
+
+            <div style="display: flex; gap: 12px; margin-top: 24px;">
+                <button type="submit" class="btn btn-primary" style="flex: 1; padding: 12px 24px; font-weight: 600;">
+                    → Voir les créneaux disponibles
+                </button>
+                <a href="{{ path('app_mes_rendez_vous') }}" class="btn btn-secondary">Annuler</a>
+            </div>
+        {{ form_end(form) }}
+    </div>
+
+</div>
 {% endblock %}

@@ -124,6 +124,17 @@ public function edit(
         $medecin = $rendezVou->getMedecin();
         $date = $rendezVou->getDebut();
 
+        // Vérifier que la date n'est pas dans le passé
+        $today = new \DateTime();
+        $today->setTime(0, 0, 0);
+        if ($date < $today) {
+            $this->addFlash('danger', 'Veuillez sélectionner une date future.');
+            return $this->render('mes_rendez_vous/edit.html.twig', [
+                'form' => $form->createView(),
+                'rendez_vou' => $rendezVou,
+            ]);
+        }
+
         $creneauxPossibles = [
             '09:00','10:00',
             '11:00','13:00',

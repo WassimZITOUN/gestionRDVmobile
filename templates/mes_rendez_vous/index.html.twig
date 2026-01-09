@@ -1,144 +1,174 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Hello MesRendezVousController!{% endblock %}
+{% block title %}Mes rendez-vous{% endblock %}
 
 {% block body %}
 <div class="container content-wrapper">
-    <main>
-        <h1 class="mb-4">Mes rendez-vous</h1>
-        {# determine ids for confirmé, annulé, and refusé #}
-        {% set id_confirme = null %}
-        {% set id_annule = null %}
-        {% set id_refuse = null %}
-        {% for e in etats %}
-            {% if e.libelle == 'confirmé' %}
-                {% set id_confirme = e.id %}
-            {% endif %}
-            {% if e.libelle == 'annulé' %}
-                {% set id_annule = e.id %}
-            {% endif %}
-            {% if e.libelle == 'refusé' %}
-                {% set id_refuse = e.id %}
-            {% endif %}
-        {% endfor %}
-
-        <form method="get" class="mb-4 card">
-            <div class="form-row">
-                <label for="etat">Filtrer par état :</label>
-                <select name="etat" id="etat" onchange="this.form.submit()">
-                    <option value="">-- Tous --</option>
-                    {% for etat in etats %}
-                        <option value="{{ etat.id }}"
-                            {{ etat.id == etatSelectionne ? 'selected' : '' }}>
-                            {{ etat.libelle|capitalize }}
-                        </option>
-                    {% endfor %}
-                </select>
-
-                {% if role == 'medecin' or role == 'assistant' %}
-                    <label for="jour" style="margin-left: 20px;">Période :</label>
-                    <select name="jour" id="jour" onchange="document.getElementById('date').value=''; this.form.submit();">
-                        <option value="">-- Tous les jours --</option>
-                        <option value="aujourdhui" {{ jourFilter == 'aujourdhui' ? 'selected' : '' }}>Aujourd'hui</option>
-                    </select>
-
-                    <label for="date" style="margin-left: 20px;">Date spécifique :</label>
-                    <input type="date" name="date" id="date" value="{{ dateSelectionnee }}">
-                    <button type="submit" class="btn btn-sm btn-primary" style="margin-left: 10px;" onclick="document.getElementById('jour').value='';">Rechercher</button>
-                {% endif %}
-            </div>
-        </form>
-
-        {% if rendezVous is empty %}
-            <div class="alert alert-info">
-                Aucun rendez-vous.
-            </div>
-        {% else %}
-            <div class="card">
-                <table style="width:100%; border-collapse: collapse;">
-                    <thead>
-                        <tr style="text-align:left; border-bottom:1px solid var(--border-light);">
-                            <th>Date</th>
-                            <th>Heure</th>
-                            <th>Médecin</th>
-                            <th>Patient</th>
-                            <th>État</th>
-                            <th></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for rdv in rendezVous %}
-                            <tr style="border-bottom:1px solid var(--border-light);">
-                                <td>{{ rdv.debut|date('d/m/Y') }}</td>
-                                <td>{{ rdv.debut|date('H:i') }} - {{ rdv.fin|date('H:i') }}</td>
-                                <td>Dr {{ rdv.medecin.nom }}</td>
-                                <td> {{ rdv.patient.prenom }} {{ rdv.patient.nom }}</td>
-
-                                <td>
-                                    <span class="badge
-                                        {% if rdv.etat.libelle == 'demandé' %}badge-info{% endif %}
-                                        {% if rdv.etat.libelle == 'confirmé' %}badge-success{% endif %}
-                                        {% if rdv.etat.libelle == 'annulé' %}badge-danger{% endif %}
-                                        {% if rdv.etat.libelle == 'refusé' %}badge-danger{% endif %}
-                                        {% if rdv.etat.libelle == 'réalisé' %}badge-primary{% endif %}
-                                    ">
-                                        {{ rdv.etat.libelle|capitalize }}
-                                    </span>
-                                </td>
-                                
-                                {# Assistant: Confirmer/Refuser; Patient: Annuler #}
-                                {% if is_granted('ROLE_ASSISTANT') %}
-                                    <td style="white-space: nowrap;">
-                                        <form method="post" action="{{ path('app_rendez_vous_change_etat', {'id': rdv.id}) }}" style="display:inline-block; margin-right:6px;">
-                                            <input type="hidden" name="etat" value="{{ id_confirme }}">
-                                            <input type="hidden" name="_token" value="{{ csrf_token('change_etat' ~ rdv.id) }}">
-                                            <button class="btn btn-sm btn-success" type="submit" {% if rdv.etat and rdv.etat.libelle == 'confirmé' %}disabled{% endif %}>Confirmer</button>
-                                        </form>
-
-                                        <form method="post" action="{{ path('app_rendez_vous_change_etat', {'id': rdv.id}) }}" style="display:inline-block;">
-                                            <input type="hidden" name="etat" value="{{ id_refuse }}">
-                                            <input type="hidden" name="_token" value="{{ csrf_token('change_etat' ~ rdv.id) }}">
-                                            <button class="btn btn-sm btn-danger" type="submit" {% if rdv.etat and rdv.etat.libelle == 'refusé' %}disabled{% endif %}>Refuser</button>
-                                        </form>
-                                    </td>
-                                {% else %}
-                                    <td>{% if rdv.etat.libelle == 'demandé' %}
-                                    <a href="{{ path('app_mes_rendez_vous_show', { id: rdv.id }) }}"
-                                    class="btn btn-sm btn-primary">
-                                    
-                                        Consulter (Modifier/Annuler)
-                                    </a>
-                                    {% elseif rdv.etat.libelle == 'confirmé' and role == 'medecin' %}
-                                        <a href="{{ path('app_mes_rendez_vous', { id: rdv.id }) }}"
-                                        class="btn btn-sm btn-warning">
-                                            Modifier
-                                        </a>
-                                    {% endif %}
-                                    {#% if rdv.etat.libelle == 'demandé' %}
-                                        <a href="{{ path('app_mes_rendez_vous_edit', { id: rdv.id }) }}"
-                                        class="btn btn-sm btn-warning">
-                                            Modifier
-                                        </a>
-
-                                    {% elseif rdv.etat.libelle == 'confirmé' and role == 'medecin' %}
-                                        <a href="{{ path('', { id: rdv.id }) }}"
-                                        class="btn btn-sm btn-warning">
-                                            Modifier
-                                        </a>
-
-                                    {% else %}
-                                        <span class="text-muted">—</span>
-                                    {% endif %#}
-                                {% endif %}
-                                </td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
+    <div class="flex-between flex-center" style="margin-bottom: 24px;">
+        <h1 style="margin: 0;">Mes rendez-vous</h1>
+        {% if role == 'patient' %}
+            {{ include('components/button.html.twig', {
+                href: path('app_rendez_vous_new'),
+                label: 'Prendre un RDV',
+                icon: '➕',
+                variant: 'primary'
+            }) }}
         {% endif %}
-    </main>
+    </div>
+
+    {# Déterminer les IDs d'états pour les formulaires #}
+    {% set id_confirme = null %}
+    {% set id_annule = null %}
+    {% set id_refuse = null %}
+    {% for e in etats %}
+        {% if e.libelle == 'confirmé' %}
+            {% set id_confirme = e.id %}
+        {% endif %}
+        {% if e.libelle == 'annulé' %}
+            {% set id_annule = e.id %}
+        {% endif %}
+        {% if e.libelle == 'refusé' %}
+            {% set id_refuse = e.id %}
+        {% endif %}
+    {% endfor %}
+
+    {# Filtres de recherche accessibles avec fieldset #}
+    <div class="card" style="margin-bottom: 24px; padding: 20px;">
+        <form method="get">
+            <fieldset style="border: none; padding: 0; margin: 0;">
+                <legend class="visually-hidden">Filtres de recherche</legend>
+
+                <div class="flex-row flex-wrap" style="align-items: flex-end;">
+                    <div style="flex: 1; min-width: 200px;" class="form-group">
+                        <label for="etat" class="label-block">Filtrer par état :</label>
+                        <select name="etat" id="etat" class="form-control" onchange="this.form.submit()">
+                            <option value="">-- Tous les états --</option>
+                            {% for etat in etats %}
+                                <option value="{{ etat.id }}" {{ etat.id == etatSelectionne ? 'selected' : '' }}>
+                                    {{ etat.libelle|capitalize }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    {% if role == 'medecin' or role == 'assistant' %}
+                        <div style="flex: 1; min-width: 200px;" class="form-group">
+                            <label for="jour" class="label-block">Période :</label>
+                            <select name="jour" id="jour" class="form-control" onchange="document.getElementById('date').value=''; this.form.submit();">
+                                <option value="">-- Tous les jours --</option>
+                                <option value="aujourdhui" {{ jourFilter == 'aujourdhui' ? 'selected' : '' }}>Aujourd'hui</option>
+                            </select>
+                        </div>
+
+                        <div style="flex: 1; min-width: 200px;" class="form-group">
+                            <label for="date" class="label-block">Date spécifique :</label>
+                            <input type="date" name="date" id="date" class="form-control" value="{{ dateSelectionnee }}">
+                        </div>
+
+                        <button type="submit" class="btn btn-primary" onclick="document.getElementById('jour').value='';">
+                            🔍 Rechercher
+                        </button>
+                    {% endif %}
+                </div>
+            </fieldset>
+        </form>
+    </div>
+
+    {# Liste des rendez-vous ou empty state #}
+    {% if rendezVous is empty %}
+        {{ include('components/alert.html.twig', {
+            type: 'info',
+            title: 'Aucun rendez-vous',
+            message: 'Vous n\'avez pas de rendez-vous correspondant aux critères sélectionnés.',
+            cta: role == 'patient' ? {
+                href: path('app_rendez_vous_new'),
+                label: '➕ Prendre un nouveau rendez-vous'
+            } : null
+        }) }}
+    {% else %}
+        <div class="grid-cards">
+            {% for rdv in rendezVous %}
+                <article class="card" style="padding: 20px; border-left: 4px solid
+                    {% if rdv.etat.libelle == 'demandé' %}var(--primary)
+                    {% elseif rdv.etat.libelle == 'confirmé' %}var(--success)
+                    {% elseif rdv.etat.libelle in ['annulé', 'refusé'] %}var(--danger)
+                    {% else %}var(--muted){% endif %};">
+
+                    <div class="flex-between flex-center" style="margin-bottom: 16px;">
+                        <div class="flex-center" style="gap: 12px;">
+                            <div style="font-size: 1.5rem; font-weight: 700; color: var(--primary);">
+                                {{ rdv.debut|date('d/m') }}
+                            </div>
+                            <div>
+                                <div style="font-weight: 600; color: var(--text);">
+                                    {{ rdv.debut|date('H:i') }} - {{ rdv.fin|date('H:i') }}
+                                </div>
+                                <div class="text-meta">
+                                    {% if role == 'patient' %}
+                                        Dr {{ rdv.medecin.nom }} {{ rdv.medecin.prenom }}
+                                    {% else %}
+                                        {{ rdv.patient.prenom }} {{ rdv.patient.nom }}
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        {% set badge_type = rdv.etat.libelle == 'confirmé' ? 'success' : (rdv.etat.libelle in ['annulé', 'refusé'] ? 'danger' : 'primary') %}
+                        {{ include('components/badge.html.twig', {
+                            type: badge_type,
+                            label: rdv.etat.libelle|capitalize
+                        }) }}
+                    </div>
+
+                    {# Actions contextuelles selon le rôle #}
+                    <div class="flex-row flex-wrap" style="gap: 8px; padding-top: 16px; border-top: 1px solid var(--border-light);">
+                        {% if is_granted('ROLE_ASSISTANT') and rdv.etat.libelle == 'demandé' %}
+                            {# Assistant peut confirmer/refuser #}
+                            <form method="post" action="{{ path('app_rendez_vous_change_etat', {'id': rdv.id}) }}" style="display:inline;">
+                                <input type="hidden" name="etat" value="{{ id_confirme }}">
+                                <input type="hidden" name="_token" value="{{ csrf_token('change_etat' ~ rdv.id) }}">
+                                <button class="btn btn-success btn-sm" type="submit">✓ Confirmer</button>
+                            </form>
+
+                            <form method="post" action="{{ path('app_rendez_vous_change_etat', {'id': rdv.id}) }}" style="display:inline;">
+                                <input type="hidden" name="etat" value="{{ id_refuse }}">
+                                <input type="hidden" name="_token" value="{{ csrf_token('change_etat' ~ rdv.id) }}">
+                                <button class="btn btn-danger btn-sm" type="submit">✗ Refuser</button>
+                            </form>
+                        {% else %}
+                            {# Patient/Médecin - boutons d'action #}
+                            {{ include('components/button.html.twig', {
+                                href: path('app_mes_rendez_vous_show', {id: rdv.id}),
+                                label: rdv.etat.libelle == 'demandé' ? 'Détails' : 'Voir',
+                                icon: rdv.etat.libelle == 'demandé' ? '📋' : '👁️',
+                                variant: rdv.etat.libelle == 'demandé' ? 'primary' : 'secondary',
+                                size: 'sm'
+                            }) }}
+
+                            {% if rdv.etat.libelle == 'demandé' and role == 'patient' %}
+                                {{ include('components/button.html.twig', {
+                                    href: path('app_mes_rendez_vous_edit', {id: rdv.id}),
+                                    label: 'Modifier',
+                                    icon: '✏️',
+                                    variant: 'warning',
+                                    size: 'sm'
+                                }) }}
+                            {% endif %}
+
+                            {% if rdv.etat.libelle == 'confirmé' and role == 'medecin' %}
+                                {{ include('components/button.html.twig', {
+                                    href: path('app_mes_rendez_vous_edit', {id: rdv.id}),
+                                    label: 'Modifier',
+                                    icon: '✏️',
+                                    variant: 'warning',
+                                    size: 'sm'
+                                }) }}
+                            {% endif %}
+                        {% endif %}
+                    </div>
+                </article>
+            {% endfor %}
+        </div>
+    {% endif %}
 </div>
-
-
 {% endblock %}

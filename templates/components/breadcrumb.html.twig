@@ -1,0 +1,32 @@
+{#
+  Composant Breadcrumb - Fil d'Ariane pour navigation hiérarchique
+
+  Usage:
+    {{ include('components/breadcrumb.html.twig', {
+      items: [
+        {label: 'Accueil', href: path('homepage')},
+        {label: 'Mes rendez-vous', href: path('mes_rendez_vous_index')},
+        {label: 'Modifier'}
+      ]
+    }) }}
+
+  Params:
+    - items: Array de {label, href (optionnel)}
+      Le dernier item sans href est considéré comme la page actuelle
+#}
+<nav aria-label="Fil d'Ariane" style="margin-bottom: 20px;">
+  <ol style="display: flex; gap: 8px; list-style: none; padding: 0; margin: 0; font-size: 0.9rem; color: var(--muted); flex-wrap: wrap;">
+    {% for item in items %}
+      <li>
+        {% if item.href is defined %}
+          <a href="{{ item.href }}" style="color: var(--primary); text-decoration: none;">{{ item.label }}</a>
+        {% else %}
+          <span aria-current="page" style="color: var(--text); font-weight: 600;">{{ item.label }}</span>
+        {% endif %}
+        {% if not loop.last %}
+          <span style="margin-left: 8px; color: var(--muted);">/</span>
+        {% endif %}
+      </li>
+    {% endfor %}
+  </ol>
+</nav>

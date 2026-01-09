@@ -1,0 +1,28 @@
+{#
+  Composant Alert - Affiche une alerte avec type et optionnellement un CTA
+
+  Usage:
+    {{ include('components/alert.html.twig', {
+      type: 'info',
+      title: 'Information',
+      message: 'Aucun rendez-vous trouvé',
+      cta: {href: path('...'), label: 'Créer un RDV'}
+    }) }}
+
+  Params:
+    - type: info|success|warning|danger (default: info)
+    - title: Titre optionnel (en gras)
+    - message: Message à afficher (requis)
+    - cta: {href, label} - Call-to-action optionnel
+#}
+<div class="alert alert-{{ type|default('info') }}" role="alert" aria-label="{{ type|default('info')|capitalize }}">
+  {% if title is defined %}
+    <strong>{{ title }}</strong>
+  {% endif %}
+  <p{% if title is not defined %} style="margin: 0;"{% endif %}>{{ message|raw }}</p>
+  {% if cta is defined %}
+    <a href="{{ cta.href }}" class="btn btn-{{ type|default('primary') }}" style="margin-top: 12px;">
+      {{ cta.label }}
+    </a>
+  {% endif %}
+</div>
