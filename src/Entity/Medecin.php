@@ -22,10 +22,17 @@ class Medecin extends User
     #[ORM\OneToMany(targetEntity: RendezVous::class, mappedBy: 'medecin')]
     private Collection $lesRendezVous;
 
+    /**
+     * @var Collection<int, DisponibiliteRecurrente>
+     */
+    #[ORM\OneToMany(targetEntity: DisponibiliteRecurrente::class, mappedBy: 'medecin', cascade: ['persist', 'remove'], orphanRemoval: true)]
+    private Collection $disponibilitesRecurrentes;
+
     public function __construct()
     {
         $this->assistants = new ArrayCollection();
         $this->lesRendezVous = new ArrayCollection();
+        $this->disponibilitesRecurrentes = new ArrayCollection();
     }
 
     /**
@@ -88,6 +95,32 @@ class Medecin extends User
         return $this;
     }
 
+    /**
+     * @return Collection<int, DisponibiliteRecurrente>
+     */
+    public function getDisponibilitesRecurrentes(): Collection
+    {
+        return $this->disponibilitesRecurrentes;
+    }
 
-    
+    public function addDisponibiliteRecurrente(DisponibiliteRecurrente $disponibilite): static
+    {
+        if (!$this->disponibilitesRecurrentes->contains($disponibilite)) {
+            $this->disponibilitesRecurrentes->add($disponibilite);
+            $disponibilite->setMedecin($this);
+        }
+
+        return $this;
+    }
+
+    public function removeDisponibiliteRecurrente(DisponibiliteRecurrente $disponibilite): static
+    {
+        if ($this->disponibilitesRecurrentes->removeElement($disponibilite)) {
+            if ($disponibilite->getMedecin() === $this) {
+                $disponibilite->setMedecin(null);
+            }
+        }
+
+        return $this;
+    }
 }

@@ -6,18 +6,15 @@ use App\Entity\Patient;
 use App\Entity\Medecin;
 use App\Repository\EtatRepository;
 use App\Repository\RendezVousRepository;
+use App\Repository\MedecinRepository;
+use App\Service\CreneauDisponibiliteService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use App\Entity\RendezVous;
-use App\Form\RendezVousType; 
 use Doctrine\ORM\EntityManagerInterface;
-use App\Repository\IndisponibiliteRepository;
 use App\Entity\Etat;
-
-
-
 
 final class MesRendezVousController extends AbstractController
 {
@@ -34,10 +31,10 @@ final class MesRendezVousController extends AbstractController
         } elseif (in_array('ROLE_MEDECIN', $user->getRoles())) {
             $role = 'medecin';
         } else {
-            throw $this->createAccessDeniedException('Vous devez être connecté en tant que patient ou médecin.');
+            throw $this->createAccessDeniedException('Vous devez etre connecte en tant que patient ou medecin.');
         }
 
-        // Met à jour automatiquement les RDV confirmés passés à "réalisé"
+        // Met a jour automatiquement les RDV confirmes passes a "realise"
         $rendezVousRepository->updatePastConfirmedToRealise();
 
         $etatId = $request->query->get('etat');
@@ -56,7 +53,7 @@ final class MesRendezVousController extends AbstractController
             }
         }
 
-        // Récupération des RDV selon le rôle
+        // Recuperation des RDV selon le role
         if ($role === 'patient') {
             $rendezVous = $rendezVousRepository->findByPatientAndEtat($user, $etatId);
         } else {
@@ -71,103 +68,93 @@ final class MesRendezVousController extends AbstractController
             'dateSelectionnee' => $dateString,
             'role' => $role,
         ]);
-
     }
+
     #[Route('/{id}/edit', name: 'app_mes_rendez_vous_edit', methods: ['GET', 'POST'], requirements: ['id' => '\d+'])]
-public function edit(
-    Request $request,
-    RendezVous $rendezVou,
-    EntityManagerInterface $entityManager,
-    IndisponibiliteRepository $indispoRepo,
-    RendezVousRepository $rendezRepo
-): Response {
-    $user = $this->getUser();
-    if (!$user instanceof Patient) {
-        $this->addFlash('danger', 'Vous devez être connecté en tant que patient.');
-        return $this->redirectToRoute('app_login');
-    }
-
-    // Remettre l'état à "demandé"
-    $etat = $entityManager->getRepository(Etat::class)->find(1);
-    $rendezVou->setEtat($etat);
-
-    // PHASE 2 : clic sur créneau
-    if ($request->request->has('creneau')) {
-        if (!$this->isCsrfTokenValid('choix_creneau', $request->request->get('_token'))) {
-            throw $this->createAccessDeniedException();
+    public function edit(
+        Request $request,
+        RendezVous $rendezVou,
+        EntityManagerInterface $entityManager,
+        MedecinRepository $medecinRepo,
+        CreneauDisponibiliteService $creneauService
+    ): Response {
+        $user = $this->getUser();
+        if (!$user instanceof Patient) {
+            $this->addFlash('danger', 'Vous devez etre connecte en tant que patient.');
+            return $this->redirectToRoute('app_login');
         }
 
-        $creneau = $request->request->get('creneau');
-        [$h, $m] = explode(':', $creneau);
-
-        $date = new \DateTime($request->request->get('date'));
-        $medecinId = $request->request->get('medecin');
-        $medecin = $entityManager->getRepository(Medecin::class)->find($medecinId);
-
-        $rendezVou->setMedecin($medecin);
-        $debut = (clone $date)->setTime((int)$h, (int)$m);
-        $rendezVou->setDebut($debut);
-        $rendezVou->setFin((clone $debut)->modify('+1 hour'));
-
-        $entityManager->flush();
-
-        $this->addFlash('success', 'Votre rendez-vous a été mis à jour.');
-
-        return $this->redirectToRoute('app_mes_rendez_vous');
-    }
-
-    // PHASE 1 : date + médecin
-    $form = $this->createForm(RendezVousType::class, $rendezVou);
-    $form->handleRequest($request);
-
-    if ($form->isSubmitted() && $form->isValid()) {
-        $medecin = $rendezVou->getMedecin();
-        $date = $rendezVou->getDebut();
-
-        // Vérifier que la date n'est pas dans le passé
-        $today = new \DateTime();
-        $today->setTime(0, 0, 0);
-        if ($date < $today) {
-            $this->addFlash('danger', 'Veuillez sélectionner une date future.');
-            return $this->render('mes_rendez_vous/edit.html.twig', [
-                'form' => $form->createView(),
-                'rendez_vou' => $rendezVou,
-            ]);
+        // Verifier que le patient est bien le proprietaire
+        if ($rendezVou->getPatient()->getId() !== $user->getId()) {
+            throw $this->createAccessDeniedException('Vous ne pouvez pas modifier ce rendez-vous.');
         }
 
-        $creneauxPossibles = [
-            '09:00','10:00',
-            '11:00','13:00',
-            '14:00','15:00',
-            '16:00',
-        ];
-
-        $creneauxDispo = [];
-        foreach ($creneauxPossibles as $c) {
-            [$h, $m] = explode(':', $c);
-            $start = (clone $date)->setTime($h, $m);
-            $end = (clone $start)->modify('+1 hour');
-
-            if (
-                empty($rendezRepo->findOverlapping($medecin, $start, $end)) &&
-                empty($indispoRepo->findOverlapping($medecin, $start, $end))
-            ) {
-                $creneauxDispo[] = $c;
+        // Si un creneau est soumis (POST)
+        if ($request->isMethod('POST') && $request->request->has('creneau')) {
+            if (!$this->isCsrfTokenValid('choix_creneau', $request->request->get('_token'))) {
+                throw $this->createAccessDeniedException('Token CSRF invalide');
             }
+
+            $medecinId = $request->request->get('medecin');
+            $date = $request->request->get('date');
+            $heure = $request->request->get('heure');
+            $duree = (int) $request->request->get('duree', 60);
+
+            $medecin = $medecinRepo->find($medecinId);
+            if (!$medecin) {
+                $this->addFlash('danger', 'Medecin invalide.');
+                return $this->redirectToRoute('app_mes_rendez_vous_edit', ['id' => $rendezVou->getId()]);
+            }
+
+            [$h, $m] = explode(':', $heure);
+            $debut = new \DateTime($date);
+            $debut->setTime((int)$h, (int)$m);
+            $fin = (clone $debut)->modify("+{$duree} minutes");
+
+            // Verifier que le creneau est toujours disponible
+            if (!$creneauService->isCreneauDisponible($medecin, $debut, $fin)) {
+                $this->addFlash('danger', 'Ce creneau n\'est plus disponible. Veuillez en choisir un autre.');
+                return $this->redirectToRoute('app_mes_rendez_vous_edit', ['id' => $rendezVou->getId()]);
+            }
+
+            // Mettre a jour le RDV
+            $rendezVou->setMedecin($medecin);
+            $rendezVou->setDebut($debut);
+            $rendezVou->setFin($fin);
+
+            // Remettre l'etat a "demande"
+            $etat = $entityManager->getRepository(Etat::class)->find(1);
+            $rendezVou->setEtat($etat);
+
+            $entityManager->flush();
+
+            $this->addFlash('success', 'Votre rendez-vous a ete modifie avec succes.');
+            return $this->redirectToRoute('app_mes_rendez_vous');
         }
 
-        return $this->render('rendez_vous/choix_creneau.html.twig', [
-            'rendezVous' => $rendezVou,
-            'creneaux' => $creneauxDispo,
+        // Afficher les creneaux disponibles pour modifier le RDV
+        $medecinId = $request->query->get('medecin');
+        $medecinSelectionne = $medecinId ? $medecinRepo->find($medecinId) : $rendezVou->getMedecin();
+
+        $medecins = $medecinRepo->findAll();
+        $creneaux = [];
+
+        if ($medecinSelectionne) {
+            $creneaux = $creneauService->getProchainsCréneaux($medecinSelectionne, 30, 50);
+            foreach ($creneaux as &$c) {
+                $c['medecin'] = $medecinSelectionne;
+            }
+        } else {
+            $creneaux = $creneauService->getProchainsCréneauxTousMedecins($medecins, 14, 30);
+        }
+
+        return $this->render('mes_rendez_vous/edit.html.twig', [
+            'rendez_vou' => $rendezVou,
+            'medecins' => $medecins,
+            'medecinSelectionne' => $medecinSelectionne,
+            'creneaux' => $creneaux,
         ]);
     }
-
-    return $this->render('mes_rendez_vous/edit.html.twig', [
-        'form' => $form->createView(),
-        'rendez_vou' => $rendezVou,
-    ]);
-}
-
 
     #[Route('/mes-rendez-vous/{id}/cancel', name: 'app_mes_rendez_vous_cancel', methods: ['POST'], requirements: ['id' => '\d+'])]
     public function cancel(
@@ -177,7 +164,7 @@ public function edit(
     ): Response {
         $user = $this->getUser();
 
-        // Sécurité : seul le patient ou le médecin concerné peut annuler
+        // Securite : seul le patient ou le medecin concerne peut annuler
         if (
             ($this->isGranted('ROLE_PATIENT') && $rendezVous->getPatient() !== $user) &&
             ($this->isGranted('ROLE_MEDECIN') && $rendezVous->getMedecin() !== $user)
@@ -185,23 +172,23 @@ public function edit(
             throw $this->createAccessDeniedException();
         }
 
-        // États non annulables
+        // Etats non annulables
         if (in_array($rendezVous->getEtat()->getLibelle(), ['annulé', 'refusé', 'realisé'])) {
-            $this->addFlash('warning', 'Ce rendez-vous ne peut plus être annulé.');
+            $this->addFlash('warning', 'Ce rendez-vous ne peut plus etre annule.');
             return $this->redirectToRoute('app_mes_rendez_vous');
         }
 
-        // Récupération de l'état "annulé"
+        // Recuperation de l'etat "annule"
         $etatAnnule = $etatRepository->findOneBy(['libelle' => 'annulé']);
 
         if (!$etatAnnule) {
-            throw new \LogicException('État "annulé" introuvable en base.');
+            throw new \LogicException('Etat "annule" introuvable en base.');
         }
 
         $rendezVous->setEtat($etatAnnule);
         $entityManager->flush();
 
-        $this->addFlash('success', 'Le rendez-vous a bien été annulé.');
+        $this->addFlash('success', 'Le rendez-vous a bien ete annule.');
 
         return $this->redirectToRoute('app_mes_rendez_vous');
     }

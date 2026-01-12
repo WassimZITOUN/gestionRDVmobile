@@ -1,21 +1,131 @@
-{# Footer #}
+{# Footer Premium #}
 <footer class="site-footer">
-  <div class="container">
-    <p>&copy; 2025 gestionRDV. Tous droits réservés.</p>
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <div class="footer-logo">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+          <line x1="16" y1="2" x2="16" y2="6"></line>
+          <line x1="8" y1="2" x2="8" y2="6"></line>
+          <line x1="3" y1="10" x2="21" y2="10"></line>
+        </svg>
+      </div>
+      <span class="footer-title">gestionRDV</span>
+    </div>
+    <p class="footer-text">&copy; {{ "now"|date("Y") }} gestionRDV. Application de gestion de rendez-vous médicaux.</p>
+    <div class="footer-links">
+      <span class="footer-made">Fait avec <span class="heart">❤</span> pour le BTS SIO</span>
+    </div>
   </div>
 </footer>
 
 <style>
-  .site-footer {
-    background: #ffffff;
-    border-top: 1px solid var(--border-light);
-    padding: var(--space-lg) 0;
-    text-align: center;
-    color: var(--text-muted);
-    margin-top: var(--space-xl);
+.site-footer {
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  border-top: 1px solid #e2e8f0;
+  padding: 32px 0;
+  margin-top: auto;
+}
+
+.footer-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  text-align: center;
+}
+
+.footer-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.footer-logo {
+  width: 36px;
+  height: 36px;
+  background: linear-gradient(135deg, #4f46e5 0%, #0d9488 100%);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2);
+}
+
+.footer-title {
+  font-weight: 700;
+  font-size: 1.1rem;
+  background: linear-gradient(135deg, #4f46e5 0%, #0d9488 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.footer-text {
+  color: #64748b;
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.footer-links {
+  display: flex;
+  gap: 24px;
+  align-items: center;
+}
+
+.footer-made {
+  color: #94a3b8;
+  font-size: 0.85rem;
+}
+
+.heart {
+  color: #ef4444;
+  display: inline-block;
+  animation: heartbeat 1.5s ease-in-out infinite;
+}
+
+@keyframes heartbeat {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.15); }
+}
+
+@media (max-width: 640px) {
+  .footer-inner {
+    gap: 12px;
   }
   
-  .site-footer p {
-    margin: 0;
+  .footer-text {
+    font-size: 0.85rem;
   }
+}
+
+/* ===== DARK MODE STYLES ===== */
+[data-theme="dark"] .site-footer {
+  background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+  border-top-color: #334155;
+}
+
+[data-theme="dark"] .footer-text {
+  color: #94a3b8;
+}
+
+[data-theme="dark"] .footer-link {
+  color: #818cf8;
+}
+
+[data-theme="dark"] .footer-link:hover {
+  color: #a5b4fc;
+}
+
+[data-theme="dark"] .footer-made {
+  color: #64748b;
+}
+
+[data-theme="dark"] .heart {
+  color: #f87171;
+}
 </style>

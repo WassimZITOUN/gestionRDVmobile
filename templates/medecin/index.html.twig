@@ -1,33 +1,279 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Medecin index{% endblock %}
+{% block title %}Choisir un médecin{% endblock %}
 
 {% block body %}
-    <h1>Quel médecin souhaitez vous consulter ?</h1>
+<div class="container" style="max-width: 900px; padding-top: 32px; padding-bottom: 48px;">
+    {# Page Header #}
+    <div class="page-header">
+        <div class="page-header-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
+            </svg>
+        </div>
+        <div class="page-header-content">
+            <h1>Choisir un médecin</h1>
+            <p class="page-header-subtitle">Sélectionnez le praticien avec lequel vous souhaitez prendre rendez-vous</p>
+        </div>
+    </div>
 
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Nom</th>
-                <th>Prenom</th>
-            </tr>
-        </thead>
-        <tbody>
-        {% for medecin in medecins %}
-            <tr>
-                <td>{{ medecin.nom }}</td>
-                <td>{{ medecin.prenom }}</td>
-                <td>
-                    <a href="{{ path('app_medecin_show', {'id': medecin.id}) }}">Choisir</a>
-                </td>
-            </tr>
-        {% else %}
-            <tr>
-                <td colspan="5">no records found</td>
-            </tr>
-        {% endfor %}
-        </tbody>
-    </table>
+    {# Liste des médecins #}
+    {% if medecins is not empty %}
+        <div class="medecin-grid">
+            {% for medecin in medecins %}
+                <div class="medecin-card">
+                    <div class="medecin-avatar">
+                        {{ medecin.prenom|slice(0, 1)|upper }}{{ medecin.nom|slice(0, 1)|upper }}
+                    </div>
+                    <div class="medecin-info">
+                        <h3 class="medecin-name">Dr {{ medecin.prenom }} {{ medecin.nom }}</h3>
+                        <p class="medecin-specialty">Médecin généraliste</p>
+                    </div>
+                    <a href="{{ path('app_medecin_show', {'id': medecin.id}) }}" class="medecin-select-btn">
+                        Choisir
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="9 18 15 12 9 6"></polyline>
+                        </svg>
+                    </a>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-state">
+            <div class="empty-state-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="9" cy="7" r="4"></circle>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                </svg>
+            </div>
+            <h2>Aucun médecin disponible</h2>
+            <p>Aucun praticien n'est enregistré dans le système pour le moment.</p>
+        </div>
+    {% endif %}
+</div>
 
-    <a href="{{ path('app_medecin_new') }}">Create new</a>
+<style>
+/* ===== Page Header Premium ===== */
+.page-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 24px;
+    margin-bottom: 40px;
+    animation: slideUp 0.4s ease-out;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(16px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.page-header-icon {
+    width: 64px;
+    height: 64px;
+    background: linear-gradient(135deg, var(--success, #10b981) 0%, #059669 100%);
+    border-radius: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    flex-shrink: 0;
+    box-shadow: 
+        0 8px 24px -4px rgba(16, 185, 129, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    transform: rotate(-3deg);
+}
+
+.page-header-content h1 {
+    margin: 0 0 6px;
+    font-size: 1.875rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, #1e293b 0%, #475569 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.page-header-subtitle {
+    margin: 0;
+    color: #64748b;
+    font-size: 1.05rem;
+}
+
+/* ===== Medecin Grid ===== */
+.medecin-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 20px;
+}
+
+.medecin-card {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    padding: 24px;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(255, 255, 255, 0.95) 100%);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.9);
+    border-radius: 20px;
+    box-shadow: 
+        0 4px 20px -4px rgba(0, 0, 0, 0.08),
+        inset 0 1px 0 rgba(255, 255, 255, 1);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    animation: slideUp 0.5s ease-out both;
+}
+
+.medecin-card:nth-child(1) { animation-delay: 0.1s; }
+.medecin-card:nth-child(2) { animation-delay: 0.15s; }
+.medecin-card:nth-child(3) { animation-delay: 0.2s; }
+.medecin-card:nth-child(4) { animation-delay: 0.25s; }
+
+.medecin-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 
+        0 16px 40px -8px rgba(0, 0, 0, 0.12),
+        0 4px 12px -4px rgba(16, 185, 129, 0.1),
+        inset 0 1px 0 rgba(255, 255, 255, 1);
+    border-color: rgba(16, 185, 129, 0.2);
+}
+
+.medecin-avatar {
+    width: 60px;
+    height: 60px;
+    background: linear-gradient(135deg, var(--success, #10b981) 0%, #059669 100%);
+    color: white;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    font-weight: 700;
+    flex-shrink: 0;
+    box-shadow: 
+        0 4px 12px rgba(16, 185, 129, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    transition: transform 0.3s ease;
+}
+
+.medecin-card:hover .medecin-avatar {
+    transform: scale(1.05) rotate(-3deg);
+}
+
+.medecin-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.medecin-name {
+    margin: 0 0 4px;
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.medecin-specialty {
+    margin: 0;
+    font-size: 0.9rem;
+    color: #64748b;
+}
+
+.medecin-select-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 20px;
+    background: linear-gradient(135deg, var(--success, #10b981) 0%, #059669 100%);
+    color: white;
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-decoration: none;
+    border-radius: 12px;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+    flex-shrink: 0;
+}
+
+.medecin-select-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(16, 185, 129, 0.4);
+}
+
+.medecin-select-btn svg {
+    transition: transform 0.2s ease;
+}
+
+.medecin-select-btn:hover svg {
+    transform: translateX(3px);
+}
+
+/* ===== Empty State ===== */
+.empty-state {
+    text-align: center;
+    padding: 72px 40px;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 250, 252, 0.95) 100%);
+    backdrop-filter: blur(10px);
+    border: 2px dashed #cbd5e1;
+    border-radius: 24px;
+}
+
+.empty-state-icon {
+    width: 104px;
+    height: 104px;
+    margin: 0 auto 28px;
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(5, 150, 105, 0.08) 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--success, #10b981);
+}
+
+.empty-state h2 {
+    margin: 0 0 12px;
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.empty-state p {
+    margin: 0;
+    color: #64748b;
+    font-size: 1rem;
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 640px) {
+    .page-header {
+        flex-direction: column;
+        gap: 18px;
+        text-align: center;
+    }
+
+    .page-header-icon {
+        margin: 0 auto;
+    }
+
+    .medecin-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .medecin-card {
+        flex-direction: column;
+        text-align: center;
+        padding: 28px 24px;
+    }
+
+    .medecin-select-btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
+</style>
 {% endblock %}
