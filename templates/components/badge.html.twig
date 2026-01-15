@@ -1,12 +1,2 @@
-{#
-  Composant Badge - Affiche un badge avec couleur selon le type
-
-  Usage:
-    {{ include('components/badge.html.twig', {type: 'success', label: 'Confirmé'}) }}
-
-  Params:
-    - type: primary|success|danger|warning|info (default: primary)
-    - label: Texte à afficher
-#}
 {% set classes = 'badge badge-' ~ (type|default('primary')) %}
 <span class="{{ classes }}">{{ label }}</span>

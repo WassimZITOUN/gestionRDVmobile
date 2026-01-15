@@ -23,7 +23,6 @@ class RegistrationFormType extends AbstractType
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
         $builder
-            
             ->add('userType', ChoiceType::class, [
                 'mapped' => false,
                 'choices'  => [
@@ -39,26 +38,21 @@ class RegistrationFormType extends AbstractType
                     ]),
                 ],
             ])
-
-           
             ->add('nom', TextType::class, [
                 'label' => 'Nom',
                 'constraints' => [
                     new NotBlank(['message' => 'Veuillez entrer votre nom.']),
                 ],
             ])
-            ->add('prenom', TextType:: class, [
+            ->add('prenom', TextType::class, [
                 'label' => 'Prénom',
                 'constraints' => [
                     new NotBlank(['message' => 'Veuillez entrer votre prénom.']),
                 ],
             ])
-            
-          
             ->add('email', EmailType::class, [
                 'label' => 'Adresse Email',
             ])
-            
             ->add('medecin', EntityType::class, [
                 'class' => Medecin::class,
                 'choices' => $options['medecins_choix'], 
@@ -67,9 +61,6 @@ class RegistrationFormType extends AbstractType
                 'required' => false,
                 'mapped' => false,
             ])
-            
-
-            
             ->add('plainPassword', RepeatedType::class, [
                 'type' => PasswordType::class,
                 'mapped' => false,
@@ -86,9 +77,7 @@ class RegistrationFormType extends AbstractType
                     ]),
                 ],
             ])
-
-       
-            ->add('agreeTerms', CheckboxType:: class, [
+            ->add('agreeTerms', CheckboxType::class, [
                 'mapped' => false,
                 'constraints' => [
                     new IsTrue([
@@ -103,11 +92,8 @@ class RegistrationFormType extends AbstractType
     {
         $resolver->setDefaults([
             'data_class' => RegistrationModel::class,
-            'medecins_choix' => [], 
-            // AJOUT :  Désactiver Turbo pour éviter l'erreur JavaScript
-            'attr' => [
-                'data-turbo' => 'false'
-            ]
+            'medecins_choix' => [],
+            'attr' => ['data-turbo' => 'false']
         ]);
     }
 }

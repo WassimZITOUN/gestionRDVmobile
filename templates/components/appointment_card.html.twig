@@ -1,18 +1,3 @@
-{#
-  Composant Appointment Card - Carte de rendez-vous réutilisable
-
-  Usage:
-    {{ include('components/appointment_card.html.twig', {
-      rdv: rendezVous,
-      show_actions: true,
-      user_role: 'patient'
-    }) }}
-
-  Params:
-    - rdv: Objet RendezVous (requis)
-    - show_actions: true|false - Afficher les boutons d'action (default: true)
-    - user_role: 'patient'|'medecin'|'assistant' - Détermine quelle info afficher
-#}
 <article class="card appointment-card">
   <div class="flex-between flex-center">
     <div>
@@ -43,8 +28,7 @@
     <div class="flex-row" style="margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border-light);">
       {{ include('components/button.html.twig', {
         href: path('mes_rendez_vous_show', {id: rdv.id}),
-        label: 'Détails',
-        icon: '📋',
+        label: 'Details',
         variant: 'primary',
         size: 'sm'
       }) }}
@@ -53,7 +37,6 @@
         {{ include('components/button.html.twig', {
           href: path('mes_rendez_vous_edit', {id: rdv.id}),
           label: 'Modifier',
-          icon: '✏️',
           variant: 'warning',
           size: 'sm'
         }) }}
@@ -61,10 +44,10 @@
 
       {% if user_role in ['medecin', 'assistant'] and rdv.etat.libelle == 'demandé' %}
         <form method="post" action="{{ path('mes_rendez_vous_confirm', {id: rdv.id}) }}" style="display: inline;">
-          <button type="submit" class="btn btn-success btn-sm">✓ Confirmer</button>
+          <button type="submit" class="btn btn-success btn-sm">Confirmer</button>
         </form>
         <form method="post" action="{{ path('mes_rendez_vous_refuse', {id: rdv.id}) }}" style="display: inline;">
-          <button type="submit" class="btn btn-danger btn-sm">✗ Refuser</button>
+          <button type="submit" class="btn btn-danger btn-sm">Refuser</button>
         </form>
       {% endif %}
     </div>

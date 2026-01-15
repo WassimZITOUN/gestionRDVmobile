@@ -15,11 +15,10 @@
     <h1 style="margin-bottom: 24px;">Modifier le rendez-vous</h1>
 
     <div class="alert alert-info" style="margin-bottom: 24px;">
-        <strong>Information importante</strong><br>
+        <strong>Information importante</strong>
         Modifier un rendez-vous implique une nouvelle demande de confirmation. L'etat passera a "demande" en attente de confirmation.
     </div>
 
-    {# Recap du RDV actuel #}
     <div class="card current-rdv" style="margin-bottom: 24px; padding: 20px;">
         <h2 style="margin-top: 0; font-size: 1.1rem; color: var(--muted);">Rendez-vous actuel</h2>
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px; margin-top: 12px;">
@@ -42,7 +41,6 @@
         </div>
     </div>
 
-    {# Filtre par medecin #}
     <div class="card" style="padding: 20px; margin-bottom: 24px;">
         <h3 style="margin-top: 0; margin-bottom: 16px;">Choisir un nouveau creneau</h3>
         <form method="get" style="display: flex; gap: 16px; align-items: flex-end; flex-wrap: wrap;">
@@ -64,7 +62,6 @@
         </form>
     </div>
 
-    {# Liste des creneaux disponibles #}
     {% if creneaux is empty %}
         <div class="alert alert-warning">
             <strong>Aucun creneau disponible</strong>
@@ -84,7 +81,6 @@
             {% set currentDate = null %}
 
             {% for creneau in creneaux %}
-                {# Grouper par date #}
                 {% if creneau.date != currentDate %}
                     {% set currentDate = creneau.date %}
                     <div class="date-header">
@@ -226,7 +222,6 @@
     background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
 }
 
-/* ===== DARK MODE STYLES ===== */
 [data-theme="dark"] .current-rdv {
     background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
     border-color: #334155;

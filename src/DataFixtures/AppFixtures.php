@@ -43,14 +43,14 @@ class AppFixtures extends Fixture
 
         $manager->flush();
 
-        echo "✅ Fixtures chargées avec succès!\n";
-        echo "📊 Résumé:\n";
-        echo "   - " . count($etats) . " états créés\n";
-        echo "   - " . count($medecins) . " médecins créés\n";
-        echo "   - " . count($patients) . " patients créés\n";
-        echo "   - " . count($assistants) . " assistants créés\n";
-        echo "\n🔐 Comptes de test:\n";
-        echo "   Médecin: medecin1@test.fr / password123\n";
+        echo "Fixtures chargees avec succes!\n";
+        echo "Resume:\n";
+        echo "   - " . count($etats) . " etats crees\n";
+        echo "   - " . count($medecins) . " medecins crees\n";
+        echo "   - " . count($patients) . " patients crees\n";
+        echo "   - " . count($assistants) . " assistants crees\n";
+        echo "\nComptes de test:\n";
+        echo "   Medecin: medecin1@test.fr / password123\n";
         echo "   Patient: patient1@test.fr / password123\n";
         echo "   Assistant: assistant1@test.fr / password123\n";
     }

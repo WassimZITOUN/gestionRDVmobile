@@ -31,7 +31,7 @@
     <div id="computed-end" style="margin-top: 8px; font-weight: 600; color: var(--muted); min-height: 20px;"></div>
     
     <button class="btn btn-primary" style="margin-top: 16px; padding: 10px 24px; font-weight: 600;" id="form_submit_btn">
-        → {{ button_label|default('Voir les créneaux disponibles') }}
+        {{ button_label|default('Voir les creneaux disponibles') }}
     </button>
 {{ form_end(form) }}
 
@@ -101,7 +101,7 @@
                             submitBtn.disabled = true;
                         }
                         if (computed) {
-                            computed.textContent = '⚠️ Aucun créneau disponible cette date';
+                            computed.textContent = 'Aucun creneau disponible cette date';
                             computed.style.color = 'var(--danger)';
                         }
                     } else {
@@ -111,7 +111,7 @@
                         }
                         var computed = document.querySelector('#computed-end');
                         if (computed) {
-                            computed.textContent = '✓ ' + data.length + ' créneau(x) disponible(s)';
+                            computed.textContent = data.length + ' creneau(x) disponible(s)';
                             computed.style.color = 'var(--success)';
                         }
                     }

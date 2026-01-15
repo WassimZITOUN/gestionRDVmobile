@@ -29,24 +29,21 @@ class UpdatePastRendezVousCommand extends Command
     {
         $io = new SymfonyStyle($input, $output);
 
-        // Récupère l'état par ID (préféré) avec fallback libellé
         $etatConfirme = $this->etatRepository->find(2)
             ?? $this->etatRepository->findOneBy(['libelle' => 'confirmé']);
         if (!$etatConfirme) {
-            $io->error('État "confirmé" introuvable');
+            $io->error('Etat "confirme" introuvable');
             return Command::FAILURE;
         }
 
-        // Récupère l'état par ID (préféré) avec fallback libellé
         $etatRealise = $this->etatRepository->find(5)
             ?? $this->etatRepository->findOneBy(['libelle' => 'réalisé'])
             ?? $this->etatRepository->findOneBy(['libelle' => 'realisé']);
         if (!$etatRealise) {
-            $io->error('État "réalisé" introuvable');
+            $io->error('Etat "realise" introuvable');
             return Command::FAILURE;
         }
 
-        // Trouve tous les RDV confirmés dont la fin est passée
         $now = new \DateTime();
         $rendezVousPasses = $this->rendezVousRepository->createQueryBuilder('r')
             ->where('r.etat = :etatConfirme')
@@ -59,18 +56,17 @@ class UpdatePastRendezVousCommand extends Command
         $count = count($rendezVousPasses);
         
         if ($count === 0) {
-            $io->success('Aucun rendez-vous confirmé passé à mettre à jour.');
+            $io->success('Aucun rendez-vous confirme passe a mettre a jour.');
             return Command::SUCCESS;
         }
 
-        // Met à jour l'état de chaque RDV
         foreach ($rendezVousPasses as $rdv) {
             $rdv->setEtat($etatRealise);
         }
 
         $this->entityManager->flush();
 
-        $io->success(sprintf('%d rendez-vous confirmé(s) passé(s) à l\'état "réalisé".', $count));
+        $io->success(sprintf('%d rendez-vous confirme(s) passe(s) a l\'etat "realise".', $count));
 
         return Command::SUCCESS;
     }

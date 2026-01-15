@@ -4,9 +4,7 @@
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>{% block title %}gestionRDV{% endblock %}</title>
-        <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 128 128%22><text y=%221.2em%22 font-size=%2296%22>⚕️</text><text y=%221.3em%22 x=%220.2em%22 font-size=%2276%22 fill=%22%23fff%22>RDV</text></svg>">
-        
-        {# Initialize theme early to prevent flash of unstyled content #}
+        <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 128 128%22><rect width=%22128%22 height=%22128%22 rx=%2216%22 fill=%22%232563eb%22/><text x=%2264%22 y=%2280%22 font-size=%2248%22 fill=%22white%22 text-anchor=%22middle%22 font-family=%22Arial%22>RDV</text></svg>">
         <script>
             (function() {
                 var theme = localStorage.getItem('theme');
@@ -28,17 +26,14 @@
             <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
             <script>
                 document.addEventListener('DOMContentLoaded', function() {
-                    // init flatpickr on date inputs (no time) for fixed-slot selection
                     function initDatepickers() {
                         if (typeof flatpickr !== 'function') {
                             console.warn('flatpickr not loaded');
                             return;
                         }
-                        // date-only pickers (for selecting a day)
                         document.querySelectorAll('input.js-datepicker, .js-datepicker').forEach(function(el) {
-                            // destroy previous instance if any (re-entrant init)
                             if (el._flatpickr) {
-                                try { el._flatpickr.destroy(); } catch (e) { /* ignore */ }
+                                try { el._flatpickr.destroy(); } catch (e) {}
                             }
                             flatpickr(el, {
                                 enableTime: false,
@@ -48,10 +43,9 @@
                             });
                         });
 
-                        // datetime pickers (date + time) for indisponibilite start/end etc.
                         document.querySelectorAll('input.js-datetime, .js-datetime').forEach(function(el) {
                             if (el._flatpickr) {
-                                try { el._flatpickr.destroy(); } catch (e) { /* ignore */ }
+                                try { el._flatpickr.destroy(); } catch (e) {}
                             }
                             flatpickr(el, {
                                 enableTime: true,
@@ -63,7 +57,6 @@
                         });
                     }
 
-                    // compute and display end time (+1h) when date or creneau changes
                     function updateComputedEnd() {
                         var dateInput = document.querySelector('.js-datepicker');
                         var slot = document.querySelector('.js-creneau');
@@ -79,13 +72,11 @@
                         out.textContent = 'Fin estimée: ' + dt.getFullYear() + '-' + String(dt.getMonth()+1).padStart(2,'0') + '-' + String(dt.getDate()).padStart(2,'0') + ' ' + String(dt.getHours()).padStart(2,'0') + ':' + String(dt.getMinutes()).padStart(2,'0');
                     }
 
-                    // call init on initial load and on Turbo/Hotwire page loads
                     initDatepickers();
                     document.addEventListener('input', updateComputedEnd);
                     document.addEventListener('change', updateComputedEnd);
                     document.addEventListener('turbo:load', function(){ initDatepickers(); updateComputedEnd(); });
                     document.addEventListener('turbo:frame-load', function(){ initDatepickers(); updateComputedEnd(); });
-                    // for older turbolinks
                     document.addEventListener('turbolinks:load', function(){ initDatepickers(); updateComputedEnd(); });
                     updateComputedEnd();
                 });
@@ -93,7 +84,6 @@
         {% endblock %}
     </head>
     <body>
-        {# Skip link for keyboard navigation - Accessibility WCAG AA #}
         {{ include('components/skip_link.html.twig') }}
 
         <div class="content-wrapper">
@@ -101,7 +91,6 @@
                 {% include 'partials/header.html.twig' %}
             {% endblock %}
             
-            {# Flash messages with accessible labels #}
             <div class="container" style="margin-top:16px;">
                 {% for label, messages in app.flashes %}
                     {% for message in messages %}

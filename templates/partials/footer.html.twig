@@ -1,4 +1,3 @@
-{# Footer Premium #}
 <footer class="site-footer">
   <div class="footer-inner">
     <div class="footer-brand">
@@ -14,7 +13,7 @@
     </div>
     <p class="footer-text">&copy; {{ "now"|date("Y") }} gestionRDV. Application de gestion de rendez-vous médicaux.</p>
     <div class="footer-links">
-      <span class="footer-made">Fait avec <span class="heart">❤</span> pour le BTS SIO</span>
+      <span class="footer-made">Projet BTS SIO</span>
     </div>
   </div>
 </footer>
@@ -82,17 +81,6 @@
   font-size: 0.85rem;
 }
 
-.heart {
-  color: #ef4444;
-  display: inline-block;
-  animation: heartbeat 1.5s ease-in-out infinite;
-}
-
-@keyframes heartbeat {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.15); }
-}
-
 @media (max-width: 640px) {
   .footer-inner {
     gap: 12px;
@@ -103,7 +91,6 @@
   }
 }
 
-/* ===== DARK MODE STYLES ===== */
 [data-theme="dark"] .site-footer {
   background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
   border-top-color: #334155;
@@ -123,9 +110,5 @@
 
 [data-theme="dark"] .footer-made {
   color: #64748b;
-}
-
-[data-theme="dark"] .heart {
-  color: #f87171;
 }
 </style>

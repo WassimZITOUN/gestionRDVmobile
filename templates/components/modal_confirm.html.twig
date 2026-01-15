@@ -1,30 +1,3 @@
-{#
-  Composant Modal Confirm - Modale de confirmation accessible (remplace confirm() JS)
-
-  Usage:
-    <button type="button" class="btn btn-danger" onclick="openModal('cancel-confirm')">
-      Annuler le rendez-vous
-    </button>
-    {{ include('components/modal_confirm.html.twig', {
-      id: 'cancel-confirm',
-      title: 'Annuler le rendez-vous',
-      message: 'Êtes-vous sûr de vouloir annuler ce rendez-vous ? Cette action est irréversible.',
-      confirm_label: 'Annuler le rendez-vous',
-      cancel_label: 'Conserver',
-      form_action: path('mes_rendez_vous_cancel', {id: rdv.id}),
-      confirm_variant: 'danger'
-    }) }}
-
-  Params:
-    - id: ID unique pour la modale (requis)
-    - title: Titre de la modale (requis)
-    - message: Message explicatif (requis)
-    - confirm_label: Label du bouton de confirmation (requis)
-    - cancel_label: Label du bouton d'annulation (default: 'Annuler')
-    - form_action: URL de l'action POST (requis)
-    - confirm_variant: Variante du bouton confirm (default: 'danger')
-    - csrf_token: Token CSRF personnalisé (optionnel)
-#}
 <div id="{{ id }}" class="modal" role="dialog" aria-modal="true" aria-labelledby="{{ id }}-title" style="display: none;">
   <div class="modal-backdrop" onclick="closeModal('{{ id }}')"></div>
   <div class="modal-content">
