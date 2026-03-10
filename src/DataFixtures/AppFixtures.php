@@ -3,8 +3,8 @@
 namespace App\DataFixtures;
 
 use App\Entity\Assistant;
+use App\Entity\DisponibiliteRecurrente;
 use App\Entity\Etat;
-use App\Entity\Indisponibilite;
 use App\Entity\Medecin;
 use App\Entity\Patient;
 use App\Entity\RendezVous;
@@ -38,8 +38,8 @@ class AppFixtures extends Fixture
         // 5. Créer des rendez-vous
         $this->createRendezVous($manager, $medecins, $patients, $etats);
 
-        // 6. Créer des indisponibilités
-        $this->createIndisponibilites($manager, $medecins);
+        // 6. Créer des disponibilités récurrentes
+        $nbDisponibilites = $this->createDisponibilitesRecurrentes($manager, $medecins);
 
         $manager->flush();
 
@@ -49,6 +49,7 @@ class AppFixtures extends Fixture
         echo "   - " . count($medecins) . " medecins crees\n";
         echo "   - " . count($patients) . " patients crees\n";
         echo "   - " . count($assistants) . " assistants crees\n";
+        echo "   - " . $nbDisponibilites . " disponibilites recurrentes creees\n";
         echo "\nComptes de test:\n";
         echo "   Medecin: medecin1@test.fr / password123\n";
         echo "   Patient: patient1@test.fr / password123\n";
@@ -265,35 +266,27 @@ class AppFixtures extends Fixture
         $manager->persist($rdv10);
     }
 
-    private function createIndisponibilites(ObjectManager $manager, array $medecins): void
+    private function createDisponibilitesRecurrentes(ObjectManager $manager, array $medecins): int
     {
-        $now = new \DateTime();
+        $data = [
+            ['medecin' => 0, 'jour' => 1, 'debut' => '09:00', 'fin' => '12:00'],
+            ['medecin' => 0, 'jour' => 3, 'debut' => '14:00', 'fin' => '18:00'],
+            ['medecin' => 1, 'jour' => 2, 'debut' => '08:30', 'fin' => '12:30'],
+            ['medecin' => 2, 'jour' => 4, 'debut' => '13:00', 'fin' => '17:00'],
+            ['medecin' => 3, 'jour' => 5, 'debut' => '09:00', 'fin' => '16:00'],
+        ];
 
-        // Indisponibilité 1: Dr Dupont en congés dans 10 jours (toute la journée)
-        $indispo1 = new Indisponibilite();
-        $debut1 = (clone $now)->modify('+10 days')->setTime(0, 0);
-        $indispo1->setDebut($debut1);
-        $indispo1->setFin((clone $debut1)->modify('+1 day')->setTime(23, 59));
-        $indispo1->setMedecin($medecins[0]);
-        $indispo1->setMotif('Congés annuels');
-        $manager->persist($indispo1);
+        foreach ($data as $row) {
+            $dispo = new DisponibiliteRecurrente();
+            $dispo->setMedecin($medecins[$row['medecin']]);
+            $dispo->setJourSemaine($row['jour']);
+            $dispo->setHeureDebut(new \DateTimeImmutable($row['debut']));
+            $dispo->setHeureFin(new \DateTimeImmutable($row['fin']));
+            $dispo->setDureeRdvMinutes(60);
+            $dispo->setActif(true);
+            $manager->persist($dispo);
+        }
 
-        // Indisponibilité 2: Dr Martin formation demain après-midi
-        $indispo2 = new Indisponibilite();
-        $debut2 = (clone $now)->modify('+1 day')->setTime(14, 0);
-        $indispo2->setDebut($debut2);
-        $indispo2->setFin((clone $debut2)->setTime(18, 0));
-        $indispo2->setMedecin($medecins[1]);
-        $indispo2->setMotif('Formation continue');
-        $manager->persist($indispo2);
-
-        // Indisponibilité 3: Dr Bernard réunion dans 5 jours
-        $indispo3 = new Indisponibilite();
-        $debut3 = (clone $now)->modify('+5 days')->setTime(13, 0);
-        $indispo3->setDebut($debut3);
-        $indispo3->setFin((clone $debut3)->modify('+2 hours'));
-        $indispo3->setMedecin($medecins[2]);
-        $indispo3->setMotif('Réunion d\'équipe');
-        $manager->persist($indispo3);
+        return count($data);
     }
 }
