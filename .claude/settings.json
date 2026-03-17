@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls -la /Users/wassim/Documents/Etudes/BTS/Projet/RDVGestion/gestionRDV/.env*)",
+      "Bash(git stash:*)",
+      "Bash(php bin/console importmap:install)",
+      "Bash(php bin/console importmap:require @hotwired/stimulus)",
+      "Bash(php bin/console debug:asset-map)",
+      "Bash(git rm:*)",
+      "Bash(git checkout:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
+    ]
+  }
+}
