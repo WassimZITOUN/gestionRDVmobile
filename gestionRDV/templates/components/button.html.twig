@@ -1,0 +1,12 @@
+{% set classes = 'btn btn-' ~ (variant|default('primary')) %}
+{% if size is defined %}{% set classes = classes ~ ' btn-' ~ size %}{% endif %}
+
+{% if href is defined %}
+<a href="{{ href }}" class="{{ classes }}"{% if aria_label is defined %} aria-label="{{ aria_label }}"{% endif %}>
+  {% if icon is defined %}<span>{{ icon }}</span> {% endif %}{{ label }}
+</a>
+{% else %}
+<button type="{{ type|default('button') }}" class="{{ classes }}"{% if disabled is defined %} disabled{% endif %}{% if onclick is defined %} onclick="{{ onclick }}"{% endif %}{% if aria_label is defined %} aria-label="{{ aria_label }}"{% endif %}>
+  {% if icon is defined %}<span>{{ icon }}</span> {% endif %}{{ label }}
+</button>
+{% endif %}

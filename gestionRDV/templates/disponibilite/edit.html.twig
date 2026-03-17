@@ -1,0 +1,90 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Modifier disponibilite{% endblock %}
+
+{% block body %}
+<div class="container content-wrapper" style="max-width: 600px;">
+    {{ include('components/breadcrumb.html.twig', {
+        items: [
+            {label: 'Accueil', href: path('homepage')},
+            {label: 'Mes disponibilites', href: path('disponibilite_index')},
+            {label: 'Modifier'}
+        ]
+    }) }}
+
+    <h1 style="margin-bottom: 24px;">Modifier la disponibilite</h1>
+
+    <div class="card" style="padding: 24px;">
+        {{ form_start(form, {'attr': {'novalidate': 'novalidate'}}) }}
+
+        <div style="margin-bottom: 20px;">
+            {{ form_label(form.jourSemaine) }}
+            {{ form_widget(form.jourSemaine, {'attr': {'style': 'width: 100%; padding: 10px; border-radius: 6px; border: 1px solid var(--border-light);'}}) }}
+            {{ form_errors(form.jourSemaine) }}
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+            <div>
+                {{ form_label(form.heureDebut) }}
+                {{ form_widget(form.heureDebut, {'attr': {'style': 'width: 100%; padding: 10px; border-radius: 6px; border: 1px solid var(--border-light);'}}) }}
+                {{ form_errors(form.heureDebut) }}
+            </div>
+            <div>
+                {{ form_label(form.heureFin) }}
+                {{ form_widget(form.heureFin, {'attr': {'style': 'width: 100%; padding: 10px; border-radius: 6px; border: 1px solid var(--border-light);'}}) }}
+                {{ form_errors(form.heureFin) }}
+            </div>
+        </div>
+
+        <div style="margin-bottom: 20px;">
+            {{ form_label(form.dureeRdvMinutes) }}
+            {{ form_widget(form.dureeRdvMinutes, {'attr': {'style': 'width: 100%; padding: 10px; border-radius: 6px; border: 1px solid var(--border-light);'}}) }}
+            {{ form_errors(form.dureeRdvMinutes) }}
+        </div>
+
+        <div style="margin-bottom: 24px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                {{ form_widget(form.actif) }}
+                {{ form_label(form.actif, null, {'label_attr': {'style': 'margin: 0; cursor: pointer;'}}) }}
+            </div>
+            {{ form_errors(form.actif) }}
+        </div>
+
+        <div style="display: flex; gap: 12px;">
+            <button type="submit" class="btn btn-primary" style="flex: 1;">Mettre a jour</button>
+            <a href="{{ path('disponibilite_index') }}" class="btn btn-secondary">Annuler</a>
+        </div>
+
+        {{ form_end(form) }}
+    </div>
+
+    <div class="card danger-zone" style="padding: 20px; margin-top: 24px;">
+        <h3 style="margin: 0 0 12px;">Supprimer cette disponibilite</h3>
+        <p style="margin: 0 0 16px;">Cette action est irreversible. Les rendez-vous deja pris sur cette plage ne seront pas affectes.</p>
+        <form method="post" action="{{ path('disponibilite_delete', {id: dispo.id}) }}" onsubmit="return confirm('Etes-vous sur de vouloir supprimer cette plage horaire ?');">
+            <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ dispo.id) }}">
+            <button type="submit" class="btn btn-danger">Supprimer definitivement</button>
+        </form>
+    </div>
+</div>
+
+<style>
+.danger-zone {
+    background: #fff3cd;
+    border-color: #ffc107;
+}
+.danger-zone h3,
+.danger-zone p {
+    color: #856404;
+}
+
+[data-theme="dark"] .danger-zone {
+    background: rgba(251, 191, 36, 0.15);
+    border-color: rgba(251, 191, 36, 0.3);
+}
+[data-theme="dark"] .danger-zone h3,
+[data-theme="dark"] .danger-zone p {
+    color: #fbbf24;
+}
+</style>
+{% endblock %}

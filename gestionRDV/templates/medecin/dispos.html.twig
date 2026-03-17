@@ -1,0 +1,31 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Disponibilitées{% endblock %}
+
+{% block body %}
+    <h1>Disponibilitées du Docteur {{ medecin.nom }} {{ medecin.prenom }}</h1>
+
+    <table class="table">
+        <tbody>
+            <tr>
+                <th>Id</th>
+                <td>{{ medecin.rendez_vous }}</td>
+            </tr>
+            <tr>
+                <th>Email</th>
+                <td>{{ medecin.email }}</td>
+            </tr>
+            <tr>
+                <th>Roles</th>
+                <td>{{ medecin.roles ? medecin.roles|json_encode : '' }}</td>
+            </tr>
+            <tr>
+                <th>Password</th>
+                <td>{{ medecin.password }}</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <a href="{{ path('app_medecin_index') }}">Retour au choix du médecin</a>
+
+{% endblock %}

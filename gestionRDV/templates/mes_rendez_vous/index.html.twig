@@ -1,0 +1,1022 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Mes rendez-vous{% endblock %}
+
+{% block body %}
+<div class="container" style="max-width: 1000px; padding-top: 32px; padding-bottom: 48px;">
+    <div class="page-header">
+        <div class="page-header-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="16" y1="2" x2="16" y2="6"></line>
+                <line x1="8" y1="2" x2="8" y2="6"></line>
+                <line x1="3" y1="10" x2="21" y2="10"></line>
+            </svg>
+        </div>
+        <div class="page-header-content">
+            <h1>Mes rendez-vous</h1>
+            <p class="page-header-subtitle">Consultez et gerez vos rendez-vous medicaux</p>
+        </div>
+        {% if role == 'patient' %}
+            <a href="{{ path('app_rendez_vous_new') }}" class="btn btn-primary">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                Prendre un RDV
+            </a>
+        {% endif %}
+    </div>
+
+    {# Determiner les IDs d'etats pour les formulaires #}
+    {% set id_confirme = null %}
+    {% set id_annule = null %}
+    {% set id_refuse = null %}
+    {% set id_realise = null %}
+    {% for e in etats %}
+        {% if e.libelle == 'confirmé' %}
+            {% set id_confirme = e.id %}
+        {% endif %}
+        {% if e.libelle == 'annulé' %}
+            {% set id_annule = e.id %}
+        {% endif %}
+        {% if e.libelle == 'refusé' %}
+            {% set id_refuse = e.id %}
+        {% endif %}
+        {% if e.libelle == 'réalisé' %}
+            {% set id_realise = e.id %}
+        {% endif %}
+    {% endfor %}
+
+    {# Filtres de recherche #}
+    <div class="filter-card">
+        <form method="get" class="filter-form">
+            <div class="filter-group">
+                <label for="etat" class="filter-label">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+                    </svg>
+                    Etat
+                </label>
+                <select name="etat" id="etat" class="filter-select" onchange="this.form.submit()">
+                    <option value="">Tous les etats</option>
+                    {% for etat in etats %}
+                        <option value="{{ etat.id }}" {{ etat.id == etatSelectionne ? 'selected' : '' }}>
+                            {{ etat.libelle|capitalize }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            {% if role == 'medecin' or role == 'assistant' %}
+                <div class="filter-group">
+                    <label for="jour" class="filter-label">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <polyline points="12 6 12 12 16 14"></polyline>
+                        </svg>
+                        Periode
+                    </label>
+                    <select name="jour" id="jour" class="filter-select" onchange="document.getElementById('date').value=''; this.form.submit();">
+                        <option value="">Tous les jours</option>
+                        <option value="aujourdhui" {{ jourFilter == 'aujourdhui' ? 'selected' : '' }}>Aujourd'hui</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label for="date" class="filter-label">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                            <line x1="16" y1="2" x2="16" y2="6"></line>
+                            <line x1="8" y1="2" x2="8" y2="6"></line>
+                            <line x1="3" y1="10" x2="21" y2="10"></line>
+                        </svg>
+                        Date
+                    </label>
+                    <input type="date" name="date" id="date" class="filter-input" value="{{ dateSelectionnee }}">
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-filter" onclick="document.getElementById('jour').value='';">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                    Rechercher
+                </button>
+            {% endif %}
+        </form>
+    </div>
+
+    {# Statistiques rapides #}
+    {% if rendezVous is not empty %}
+        <div class="stats-bar2">
+            {% set nbDemandes = 0 %}
+            {% set nbConfirmes = 0 %}
+            {% set nbAnnules = 0 %}
+            {% for rdv in rendezVous %}
+                {% if rdv.etat.libelle == 'demandé' %}{% set nbDemandes = nbDemandes + 1 %}{% endif %}
+                {% if rdv.etat.libelle == 'confirmé' %}{% set nbConfirmes = nbConfirmes + 1 %}{% endif %}
+                {% if rdv.etat.libelle in ['annulé', 'refusé'] %}{% set nbAnnules = nbAnnules + 1 %}{% endif %}
+            {% endfor %}
+            <div class="stat-item">
+                <span class="stat-number">{{ rendezVous|length }}</span>
+                <span class="stat-label">Total</span>
+            </div>
+            {% if nbDemandes > 0 %}
+            <div class="stat-item stat-pending">
+                <span class="stat-number">{{ nbDemandes }}</span>
+                <span class="stat-label">En attente</span>
+            </div>
+            {% endif %}
+            {% if nbConfirmes > 0 %}
+            <div class="stat-item stat-confirmed">
+                <span class="stat-number">{{ nbConfirmes }}</span>
+                <span class="stat-label">Confirmes</span>
+            </div>
+            {% endif %}
+        </div>
+    {% endif %}
+
+    {# Liste des rendez-vous ou empty state #}
+    {% if rendezVous is empty %}
+        <div class="empty-state">
+            <div class="empty-state-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                </svg>
+            </div>
+            <h2>Aucun rendez-vous</h2>
+            <p>Vous n'avez pas de rendez-vous correspondant aux criteres selectionnes.</p>
+            {% if role == 'patient' %}
+                <a href="{{ path('app_rendez_vous_new') }}" class="btn btn-primary btn-lg">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    Prendre un nouveau rendez-vous
+                </a>
+            {% endif %}
+        </div>
+    {% else %}
+        {# Tableau de traduction pour les mois #}
+        {% set moisFr = {'Jan': 'JAN', 'Feb': 'FÉV', 'Mar': 'MAR', 'Apr': 'AVR', 'May': 'MAI', 'Jun': 'JUIN', 'Jul': 'JUIL', 'Aug': 'AOÛT', 'Sep': 'SEP', 'Oct': 'OCT', 'Nov': 'NOV', 'Dec': 'DÉC'} %}
+        <div class="rdv-list">
+            {% for rdv in rendezVous %}
+                <article class="rdv-card {% if rdv.etat.libelle == 'demandé' %}rdv-pending{% elseif rdv.etat.libelle == 'confirmé' %}rdv-confirmed{% elseif rdv.etat.libelle in ['annulé', 'refusé'] %}rdv-cancelled{% endif %}">
+                    <div class="rdv-date-badge">
+                        <span class="rdv-date-day">{{ rdv.debut|date('d') }}</span>
+                        <span class="rdv-date-month">{{ moisFr[rdv.debut|date('M')] }}</span>
+                    </div>
+
+                    <div class="rdv-content">
+                        <div class="rdv-main">
+                            <div class="rdv-time">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <polyline points="12 6 12 12 16 14"></polyline>
+                                </svg>
+                                {{ rdv.debut|date('H:i') }} - {{ rdv.fin|date('H:i') }}
+                            </div>
+                            <div class="rdv-person">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                    <circle cx="12" cy="7" r="4"></circle>
+                                </svg>
+                                {% if role == 'patient' %}
+                                    Dr {{ rdv.medecin.nom }} {{ rdv.medecin.prenom }}
+                                {% else %}
+                                    {{ rdv.patient.prenom }} {{ rdv.patient.nom }}
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="rdv-status">
+                            <span class="status-badge status-{{ rdv.etat.libelle == 'confirmé' ? 'success' : (rdv.etat.libelle in ['annulé', 'refusé'] ? 'danger' : 'pending') }}">
+                                {% if rdv.etat.libelle == 'confirmé' %}
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polyline points="20 6 9 17 4 12"></polyline>
+                                    </svg>
+                                {% elseif rdv.etat.libelle in ['annulé', 'refusé'] %}
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                                    </svg>
+                                {% else %}
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <polyline points="12 6 12 12 16 14"></polyline>
+                                    </svg>
+                                {% endif %}
+                                {{ rdv.etat.libelle|capitalize }}
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="rdv-actions">
+                        {% if is_granted('ROLE_ASSISTANT') and rdv.etat.libelle == 'demandé' %}
+                            <form method="post" action="{{ path('app_rendez_vous_change_etat', {'id': rdv.id}) }}" class="action-form">
+                                <input type="hidden" name="etat" value="{{ id_confirme }}">
+                                <input type="hidden" name="_token" value="{{ csrf_token('change_etat' ~ rdv.id) }}">
+                                <button class="action-btn action-btn-success" type="submit" title="Confirmer">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polyline points="20 6 9 17 4 12"></polyline>
+                                    </svg>
+                                </button>
+                            </form>
+                            <form method="post" action="{{ path('app_rendez_vous_change_etat', {'id': rdv.id}) }}" class="action-form">
+                                <input type="hidden" name="etat" value="{{ id_refuse }}">
+                                <input type="hidden" name="_token" value="{{ csrf_token('change_etat' ~ rdv.id) }}">
+                                <button class="action-btn action-btn-danger" type="submit" title="Refuser">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                                    </svg>
+                                </button>
+                            </form>
+                        {% elseif is_granted('ROLE_ASSISTANT') and rdv.etat.libelle == 'confirmé' %}
+                            <a href="{{ path('app_mes_rendez_vous_show', {id: rdv.id}) }}" class="action-btn" title="Voir les details">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                    <circle cx="12" cy="12" r="3"></circle>
+                                </svg>
+                            </a>
+                            <form method="post" action="{{ path('app_rendez_vous_change_etat', {'id': rdv.id}) }}" class="action-form">
+                                <input type="hidden" name="etat" value="{{ id_realise }}">
+                                <input type="hidden" name="_token" value="{{ csrf_token('change_etat' ~ rdv.id) }}">
+                                <button class="action-btn action-btn-realise" type="submit" title="Marquer comme realise">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                                        <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                                    </svg>
+                                </button>
+                            </form>
+                        {% else %}
+                            <a href="{{ path('app_mes_rendez_vous_show', {id: rdv.id}) }}" class="action-btn" title="Voir les details">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                    <circle cx="12" cy="12" r="3"></circle>
+                                </svg>
+                            </a>
+                            {% if rdv.etat.libelle == 'demandé' and role == 'patient' %}
+                                <a href="{{ path('app_mes_rendez_vous_edit', {id: rdv.id}) }}" class="action-btn action-btn-warning" title="Modifier">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                    </svg>
+                                </a>
+                            {% endif %}
+                            {% if rdv.etat.libelle == 'confirmé' and role == 'medecin' %}
+                                <a href="{{ path('app_mes_rendez_vous_edit', {id: rdv.id}) }}" class="action-btn action-btn-warning" title="Modifier">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                    </svg>
+                                </a>
+                                <form method="post" action="{{ path('app_rendez_vous_change_etat', {'id': rdv.id}) }}" class="action-form">
+                                    <input type="hidden" name="etat" value="{{ id_realise }}">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('change_etat' ~ rdv.id) }}">
+                                    <button class="action-btn action-btn-realise" type="submit" title="Marquer comme realise">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                                            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                                        </svg>
+                                    </button>
+                                </form>
+                            {% endif %}
+                        {% endif %}
+                    </div>
+                </article>
+            {% endfor %}
+        </div>
+    {% endif %}
+</div>
+
+<style>
+/* Page Header - Premium Style */
+.page-header {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    margin-bottom: 36px;
+    padding-bottom: 28px;
+    border-bottom: 1px solid #e2e8f0;
+    flex-wrap: wrap;
+}
+
+.page-header-icon {
+    width: 60px;
+    height: 60px;
+    background: linear-gradient(135deg, #4f46e5 0%, #0d9488 100%);
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    flex-shrink: 0;
+    box-shadow: 0 8px 24px rgba(79, 70, 229, 0.25);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.page-header-icon:hover {
+    transform: rotate(-5deg) scale(1.05);
+}
+
+.page-header-content {
+    flex: 1;
+    min-width: 200px;
+}
+
+.page-header-content h1 {
+    margin: 0 0 6px;
+    font-size: 1.875rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, #0f172a 0%, #4f46e5 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    letter-spacing: -0.02em;
+}
+
+.page-header-subtitle {
+    margin: 0;
+    color: #64748b;
+    font-size: 1rem;
+}
+
+.page-header .btn {
+    flex-shrink: 0;
+    padding: 12px 24px;
+    border-radius: 12px;
+    font-weight: 600;
+    box-shadow: 0 8px 24px rgba(79, 70, 229, 0.25);
+}
+
+/* Filter Card - Glass Effect */
+.filter-card {
+    background: var(--glass);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--border-light);
+    border-radius: 20px;
+    padding: 24px;
+    margin-bottom: 28px;
+    box-shadow: var(--shadow-md);
+}
+
+.filter-form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    align-items: flex-end;
+}
+
+.filter-group {
+    flex: 1;
+    min-width: 160px;
+}
+
+.filter-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #64748b;
+    margin-bottom: 10px;
+}
+
+.filter-label svg {
+    color: #4f46e5;
+}
+
+.filter-select,
+.filter-input {
+    width: 100%;
+    padding: 12px 16px;
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: #0f172a;
+    background: white;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+}
+
+.filter-select:hover,
+.filter-input:hover {
+    border-color: #c7d2fe;
+}
+
+.filter-select:focus,
+.filter-input:focus {
+    outline: none;
+    border-color: #4f46e5;
+    box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1);
+}
+
+.btn-filter {
+    height: 48px;
+    padding: 0 24px;
+    border-radius: 12px;
+    font-weight: 600;
+}
+
+/* Stats Bar - Modern Cards */
+.stats-bar {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 28px;
+    flex-wrap: wrap;
+}
+.stats-bar2 {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 28px;
+    flex-wrap: wrap;
+}
+
+.stat-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 16px 28px;
+    background: var(--card);
+    border: 1px solid var(--border-light);
+    border-radius: 16px;
+    box-shadow: var(--shadow-sm);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    min-width: 100px;
+}
+
+.stat-item:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+    border-color: #c7d2fe;
+}
+
+.stat-number {
+    font-size: 1.75rem;
+    font-weight: 800;
+    color: #0f172a;
+    line-height: 1;
+}
+
+.stat-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.stat-pending .stat-number { color: #4f46e5; }
+.stat-confirmed .stat-number { color: #10b981; }
+
+/* Empty State - Beautiful Illustration */
+.empty-state {
+    text-align: center;
+    padding: 80px 40px;
+    background: var(--card);
+    border: 2px dashed var(--border-medium);
+    border-radius: 24px;
+}
+
+.empty-state-icon {
+    width: 100px;
+    height: 100px;
+    margin: 0 auto 28px;
+    background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #4f46e5;
+    animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+}
+
+.empty-state h2 {
+    margin: 0 0 12px;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.empty-state p {
+    margin: 0 0 28px;
+    color: #64748b;
+    font-size: 1rem;
+    max-width: 400px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.btn-lg {
+    padding: 16px 32px;
+    font-size: 1rem;
+    border-radius: 14px;
+}
+
+/* RDV List - Card Grid */
+.rdv-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.rdv-card {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 20px 24px;
+    background: var(--card);
+    border: 1px solid var(--border-light);
+    border-radius: 20px;
+    box-shadow: var(--shadow-sm);
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden;
+}
+
+.rdv-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    border-radius: 4px 0 0 4px;
+    transition: all 0.2s;
+}
+
+.rdv-card:hover {
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.1);
+    transform: translateY(-4px) scale(1.01);
+    border-color: #c7d2fe;
+}
+
+.rdv-pending::before { background: linear-gradient(180deg, #4f46e5, #818cf8); }
+.rdv-confirmed::before { background: linear-gradient(180deg, #10b981, #34d399); }
+.rdv-cancelled::before { background: linear-gradient(180deg, #94a3b8, #64748b); }
+.rdv-cancelled { opacity: 0.75; }
+
+.rdv-date-badge {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 64px;
+    height: 64px;
+    background: linear-gradient(135deg, #4f46e5 0%, #0d9488 100%);
+    color: white;
+    border-radius: 16px;
+    flex-shrink: 0;
+    box-shadow: 0 6px 20px rgba(79, 70, 229, 0.25);
+    transition: all 0.2s;
+}
+
+.rdv-card:hover .rdv-date-badge {
+    transform: scale(1.05) rotate(-3deg);
+}
+
+.rdv-cancelled .rdv-date-badge {
+    background: linear-gradient(135deg, #94a3b8 0%, #64748b 100%);
+    box-shadow: 0 6px 20px rgba(100, 116, 139, 0.25);
+}
+
+.rdv-date-day {
+    font-size: 1.5rem;
+    font-weight: 800;
+    line-height: 1;
+    color: white;
+}
+
+.rdv-date-month {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+    opacity: 0.9;
+    color: white;
+}
+
+.rdv-content {
+    flex: 1;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    min-width: 0;
+}
+
+.rdv-main {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+}
+
+.rdv-time {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 700;
+    color: #0f172a;
+    font-size: 1.05rem;
+}
+
+.rdv-time svg {
+    color: #4f46e5;
+}
+
+.rdv-person {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #64748b;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.rdv-person svg {
+    color: #94a3b8;
+}
+
+.rdv-status {
+    flex-shrink: 0;
+}
+
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: capitalize;
+}
+
+.status-pending {
+    background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%);
+    color: #4f46e5;
+    border: 1px solid #c7d2fe;
+}
+
+.status-success {
+    background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+    color: #059669;
+    border: 1px solid #6ee7b7;
+}
+
+.status-danger {
+    background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+    color: #dc2626;
+    border: 1px solid #fca5a5;
+}
+
+/* Action Buttons - Modern Style */
+.rdv-actions {
+    display: flex;
+    gap: 10px;
+    flex-shrink: 0;
+}
+
+.action-form {
+    display: inline;
+}
+
+.action-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    background: var(--card);
+    border: 2px solid var(--border-light);
+    border-radius: 12px;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    text-decoration: none;
+}
+
+.action-btn:hover {
+    color: #4f46e5;
+    border-color: #4f46e5;
+    background: #eef2ff;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(79, 70, 229, 0.15);
+}
+
+.action-btn-success:hover {
+    color: white;
+    border-color: #10b981;
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    box-shadow: 0 6px 16px rgba(16, 185, 129, 0.25);
+}
+
+.action-btn-warning:hover {
+    color: white;
+    border-color: #f59e0b;
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    box-shadow: 0 6px 16px rgba(245, 158, 11, 0.25);
+}
+
+.action-btn-danger:hover {
+    color: white;
+    border-color: #ef4444;
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    box-shadow: 0 6px 16px rgba(239, 68, 68, 0.25);
+}
+
+.action-btn-realise:hover {
+    color: white;
+    border-color: #8b5cf6;
+    background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+    box-shadow: 0 6px 16px rgba(139, 92, 246, 0.25);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .page-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 16px;
+        text-align: center;
+    }
+
+    .page-header-icon {
+        width: 52px;
+        height: 52px;
+        border-radius: 14px;
+        margin: 0 auto;
+    }
+
+    .page-header .btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .filter-form {
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .filter-group {
+        width: 100%;
+    }
+
+    .stats-bar {
+        justify-content: center;
+    }
+     .stats-bar2 {
+        justify-content: center;
+    }
+
+    .stat-item {
+        flex: 1;
+        min-width: 100px;
+    }
+
+    .rdv-card {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 16px;
+        padding: 20px;
+    }
+
+    .rdv-card::before {
+        width: 100%;
+        height: 4px;
+        border-radius: 4px 4px 0 0;
+    }
+
+    .rdv-date-badge {
+        width: 100%;
+        height: auto;
+        flex-direction: row;
+        gap: 10px;
+        padding: 14px;
+        border-radius: 12px;
+    }
+
+    .rdv-content {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 14px;
+    }
+
+    .rdv-actions {
+        width: 100%;
+        justify-content: flex-end;
+        padding-top: 16px;
+        border-top: 1px solid #e2e8f0;
+    }
+
+    .empty-state {
+        padding: 60px 24px;
+    }
+}
+
+/* ===== DARK MODE STYLES ===== */
+[data-theme="dark"] .page-header {
+    border-bottom-color: #334155;
+}
+
+[data-theme="dark"] .page-header-content h1 {
+    background: linear-gradient(135deg, #f1f5f9 0%, #818cf8 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+[data-theme="dark"] .page-header-subtitle {
+    color: #94a3b8;
+}
+
+[data-theme="dark"] .filter-card {
+    background: #1e293b;
+    border-color: #334155;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .filter-label {
+    color: #94a3b8;
+}
+
+[data-theme="dark"] .filter-label svg {
+    color: #818cf8;
+}
+
+[data-theme="dark"] .filter-select,
+[data-theme="dark"] .filter-input {
+    background: #0f172a;
+    border-color: #334155;
+    color: #f1f5f9;
+}
+
+[data-theme="dark"] .filter-select option {
+    background: #1e293b;
+    color: #f1f5f9;
+}
+
+[data-theme="dark"] .filter-select:hover,
+[data-theme="dark"] .filter-input:hover {
+    border-color: #475569;
+}
+
+[data-theme="dark"] .filter-select:focus,
+[data-theme="dark"] .filter-input:focus {
+    border-color: #818cf8;
+    box-shadow: 0 0 0 4px rgba(129, 140, 248, 0.15);
+}
+
+[data-theme="dark"] .stats-bar {
+    background: rgba(30, 41, 59, 0.8);
+    border-color: #334155;
+}
+[data-theme="dark"] .stats-bar2 {
+    background: rgba(255, 255, 255, 0);
+    border-color: #334155;
+}
+[data-theme="dark"] .stat-item {
+    background: #1e293b;
+    border-color: #334155;
+}
+
+[data-theme="dark"] .stat-item:hover {
+    border-color: #475569;
+}
+
+[data-theme="dark"] .stat-number {
+    color: #f1f5f9;
+}
+
+[data-theme="dark"] .stat-label {
+    color: #64748b;
+}
+
+[data-theme="dark"] .stat-pending .stat-number { color: #818cf8; }
+[data-theme="dark"] .stat-confirmed .stat-number { color: #34d399; }
+
+[data-theme="dark"] .empty-state {
+    background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+    border-color: #334155;
+}
+
+[data-theme="dark"] .empty-state-icon {
+    background: linear-gradient(135deg, rgba(129, 140, 248, 0.15) 0%, rgba(167, 139, 250, 0.1) 100%);
+    color: #818cf8;
+}
+
+[data-theme="dark"] .empty-state h2 {
+    color: #f1f5f9;
+}
+
+[data-theme="dark"] .empty-state p {
+    color: #94a3b8;
+}
+
+[data-theme="dark"] .rdv-card {
+    background: #1e293b;
+    border-color: #334155;
+}
+
+[data-theme="dark"] .rdv-card:hover {
+    border-color: #475569;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .rdv-pending::before { background: linear-gradient(180deg, #818cf8, #a5b4fc); }
+[data-theme="dark"] .rdv-confirmed::before { background: linear-gradient(180deg, #34d399, #6ee7b7); }
+[data-theme="dark"] .rdv-cancelled::before { background: linear-gradient(180deg, #64748b, #94a3b8); }
+
+[data-theme="dark"] .rdv-date-badge {
+    background: linear-gradient(135deg, #6366f1 0%, #14b8a6 100%);
+}
+
+[data-theme="dark"] .rdv-cancelled .rdv-date-badge {
+    background: linear-gradient(135deg, #64748b 0%, #475569 100%);
+}
+
+[data-theme="dark"] .rdv-time {
+    color: #f1f5f9;
+}
+
+[data-theme="dark"] .rdv-time svg {
+    color: #818cf8;
+}
+
+[data-theme="dark"] .rdv-person {
+    color: #94a3b8;
+}
+
+[data-theme="dark"] .rdv-person svg {
+    color: #64748b;
+}
+
+[data-theme="dark"] .status-pending {
+    background: linear-gradient(135deg, rgba(129, 140, 248, 0.15) 0%, rgba(167, 139, 250, 0.1) 100%);
+    color: #a5b4fc;
+    border-color: rgba(129, 140, 248, 0.3);
+}
+
+[data-theme="dark"] .status-success {
+    background: linear-gradient(135deg, rgba(52, 211, 153, 0.15) 0%, rgba(110, 231, 183, 0.1) 100%);
+    color: #6ee7b7;
+    border-color: rgba(52, 211, 153, 0.3);
+}
+
+[data-theme="dark"] .status-danger {
+    background: linear-gradient(135deg, rgba(248, 113, 113, 0.15) 0%, rgba(252, 165, 165, 0.1) 100%);
+    color: #fca5a5;
+    border-color: rgba(248, 113, 113, 0.3);
+}
+
+[data-theme="dark"] .action-btn {
+    background: #334155;
+    border-color: #475569;
+    color: #94a3b8;
+}
+
+[data-theme="dark"] .action-btn:hover {
+    background: rgba(129, 140, 248, 0.15);
+    border-color: #818cf8;
+    color: #818cf8;
+}
+
+[data-theme="dark"] .action-btn-success:hover {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    border-color: #10b981;
+    color: white;
+}
+
+[data-theme="dark"] .action-btn-danger:hover {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    border-color: #ef4444;
+    color: white;
+}
+
+[data-theme="dark"] .action-btn-realise:hover {
+    background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+    border-color: #8b5cf6;
+    color: white;
+}
+
+@media (max-width: 768px) {
+    [data-theme="dark"] .rdv-actions {
+        border-top-color: #334155;
+    }
+}
+</style>
+{% endblock %}

@@ -1,0 +1,25 @@
+<div class="form-group">
+  {% if required is defined and required %}
+    {{ form_label(field, null, {label_attr: {class: 'label-block'}}) }}
+    <span style="color: var(--danger); margin-left: 4px;">*</span>
+  {% else %}
+    {{ form_label(field, null, {label_attr: {class: 'label-block'}}) }}
+  {% endif %}
+
+  {{ form_widget(field, {
+    attr: {
+      class: (class|default('') ~ ' form-control')|trim,
+      'aria-describedby': help is defined ? field.vars.id ~ '-help' : null
+    }
+  }) }}
+
+  {% if help is defined %}
+    <small id="{{ field.vars.id }}-help" class="help">{{ help }}</small>
+  {% endif %}
+
+  {% if form_errors(field)|length > 0 %}
+    <div role="alert" aria-live="assertive" style="color: var(--danger); font-size: 0.9rem; margin-top: 6px;">
+      {{ form_errors(field) }}
+    </div>
+  {% endif %}
+</div>

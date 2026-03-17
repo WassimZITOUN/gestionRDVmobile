@@ -1,0 +1,11 @@
+<div class="alert alert-{{ type|default('info') }}" role="alert" aria-label="{{ type|default('info')|capitalize }}">
+  {% if title is defined %}
+    <strong>{{ title }}</strong>
+  {% endif %}
+  <p{% if title is not defined %} style="margin: 0;"{% endif %}>{{ message|raw }}</p>
+  {% if cta is defined %}
+    <a href="{{ cta.href }}" class="btn btn-{{ type|default('primary') }}" style="margin-top: 12px;">
+      {{ cta.label }}
+    </a>
+  {% endif %}
+</div>

@@ -1,0 +1,77 @@
+security:
+    # ----------------------------------------
+    # Définition des hashers pour les mots de passe
+    # Symfony va automatiquement choisir le meilleur algorithme pour sécuriser les mots de passe
+    # Ici, 'auto' permet de gérer les mises à jour futures de l'algorithme
+    password_hashers:
+        Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface: 'auto'
+
+    # ----------------------------------------
+    # Définition des providers (sources de données utilisateurs)
+    # Ici on utilise un provider basé sur l'entité User
+    # 'property: email' signifie qu'on identifie l'utilisateur par son email
+    providers:
+        app_user_provider:
+            entity:
+                class: App\Entity\User
+                property: email
+
+    # ----------------------------------------
+    # Firewalls : définition des zones de sécurité
+    firewalls:
+        # Firewall pour le mode développement (profiler, CSS, images, JS)
+        # Il ne nécessite aucune sécurité
+        dev:
+            pattern: ^/(_(profiler|wdt)|css|images|js)/
+            security: false
+
+        # ----------------------
+        # Firewall pour l'API LOGIN JWT
+        # DOIT être avant 'main' et 'api', car Symfony utilise le premier firewall correspondant
+        login:
+            pattern: ^/api/login          # toutes les requêtes vers /api/login
+            stateless: true               # pas de session, JWT stateless
+            provider: app_user_provider   # source des utilisateurs
+            json_login:
+                check_path: /api/login   # route à intercepter pour l'authentification
+                username_path: email     # clé JSON envoyée par le client pour l'identifiant
+                password_path: password  # clé JSON envoyée par le client pour le mot de passe
+                # Handlers LexikJWT pour gérer le succès ou l'échec
+                success_handler: lexik_jwt_authentication.handler.authentication_success
+                failure_handler: lexik_jwt_authentication.handler.authentication_failure
+
+        # ----------------------
+        # Firewall pour toutes les routes de l'API
+        api:
+            pattern: ^/api               # toutes les routes commençant par /api
+            stateless: true              # JWT stateless
+            provider: app_user_provider
+            jwt: ~                        # activation de la vérification du JWT via Lexik
+
+        # ----------------------
+        # Firewall pour le site web classique
+        main:
+            lazy: true                   # l'utilisateur est chargé seulement si nécessaire
+            provider: app_user_provider
+            form_login:
+                login_path: app_login    # page de login du site web
+                check_path: app_login    # URL interceptée pour vérifier le login
+                enable_csrf: true        # protection CSRF activée
+            logout:
+                path: app_logout         # URL pour se déconnecter
+
+    # ----------------------------------------
+
+    # Contrôle d'accès aux routes
+    access_control:
+    # Login JWT public
+    - { path: ^/api/login, roles: PUBLIC_ACCESS }
+
+    # Documentation Swagger publique
+    - { path: ^/api/docs, roles: PUBLIC_ACCESS }
+    - { path: ^/api/.well-known, roles: PUBLIC_ACCESS }    # nécessaire pour API Platform
+    - { path: ^/api/contexts, roles: PUBLIC_ACCESS }       # nécessaire pour API Platform
+    - { path: ^/api$, roles: PUBLIC_ACCESS }               # page principale /api pour Swagger
+
+    # Toutes les autres routes nécessitent JWT
+    - { path: ^/api, roles: IS_AUTHENTICATED_FULLY }

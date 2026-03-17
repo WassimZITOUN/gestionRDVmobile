@@ -1,0 +1,72 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Nouvelle disponibilite{% endblock %}
+
+{% block body %}
+<div class="container content-wrapper" style="max-width: 600px;">
+    {{ include('components/breadcrumb.html.twig', {
+        items: [
+            {label: 'Accueil', href: path('homepage')},
+            {label: 'Mes disponibilites', href: path('disponibilite_index')},
+            {label: 'Nouvelle plage'}
+        ]
+    }) }}
+
+    <h1 style="margin-bottom: 24px;">Ajouter une plage de disponibilite</h1>
+
+    <div class="card" style="padding: 24px;">
+        {{ form_start(form, {'attr': {'novalidate': 'novalidate'}}) }}
+
+        <div style="margin-bottom: 20px;">
+            {{ form_label(form.jourSemaine) }}
+            {{ form_widget(form.jourSemaine, {'attr': {'style': 'width: 100%; padding: 10px; border-radius: 6px; border: 1px solid var(--border-light);'}}) }}
+            {{ form_errors(form.jourSemaine) }}
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+            <div>
+                {{ form_label(form.heureDebut) }}
+                {{ form_widget(form.heureDebut, {'attr': {'style': 'width: 100%; padding: 10px; border-radius: 6px; border: 1px solid var(--border-light);'}}) }}
+                {{ form_errors(form.heureDebut) }}
+            </div>
+            <div>
+                {{ form_label(form.heureFin) }}
+                {{ form_widget(form.heureFin, {'attr': {'style': 'width: 100%; padding: 10px; border-radius: 6px; border: 1px solid var(--border-light);'}}) }}
+                {{ form_errors(form.heureFin) }}
+            </div>
+        </div>
+
+        <div style="margin-bottom: 20px;">
+            {{ form_label(form.dureeRdvMinutes) }}
+            {{ form_widget(form.dureeRdvMinutes, {'attr': {'style': 'width: 100%; padding: 10px; border-radius: 6px; border: 1px solid var(--border-light);'}}) }}
+            {{ form_errors(form.dureeRdvMinutes) }}
+            <small style="color: var(--muted); display: block; margin-top: 4px;">
+                Duree de chaque creneau de rendez-vous dans cette plage
+            </small>
+        </div>
+
+        <div style="margin-bottom: 24px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                {{ form_widget(form.actif) }}
+                {{ form_label(form.actif, null, {'label_attr': {'style': 'margin: 0; cursor: pointer;'}}) }}
+            </div>
+            {{ form_errors(form.actif) }}
+            <small style="color: var(--muted); display: block; margin-top: 4px;">
+                Desactivez temporairement cette plage sans la supprimer
+            </small>
+        </div>
+
+        <div class="alert alert-info" style="margin-bottom: 24px; color: #fff;">
+            <strong>Exemple :</strong> Si vous selectionnez Lundi, de 09:00 a 12:00 avec une duree de 1h,
+            les patients pourront prendre rendez-vous a 09:00, 10:00 et 11:00 chaque lundi.
+        </div>
+
+        <div style="display: flex; gap: 12px;">
+            <button type="submit" class="btn btn-primary" style="flex: 1;">Enregistrer</button>
+            <a href="{{ path('disponibilite_index') }}" class="btn btn-secondary">Annuler</a>
+        </div>
+
+        {{ form_end(form) }}
+    </div>
+</div>
+{% endblock %}

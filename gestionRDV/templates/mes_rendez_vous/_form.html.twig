@@ -1,0 +1,148 @@
+{{ form_start(form) }}
+    <div style="margin-bottom: 20px;">
+        <label style="display: block; font-weight: 600; margin-bottom: 8px; color: var(--text);">
+            {{ form.debut.vars.label }}
+        </label>
+        {{ form_widget(form.debut, {
+            attr: { 
+                class: 'js-datepicker form-control',
+                id: 'form_debut',
+                style: 'width: 100%; padding: 10px; border: 1px solid var(--border-light); border-radius: 6px; font-size: 1rem;',
+                min: 'today'
+            }
+        }) }}
+        {{ form_errors(form.debut) }}
+    </div>
+
+    <div style="margin-bottom: 20px;">
+        <label style="display: block; font-weight: 600; margin-bottom: 8px; color: var(--text);">
+            {{ form.medecin.vars.label }}
+        </label>
+        {{ form_widget(form.medecin, {
+            attr: {
+                id: 'form_medecin',
+                class: 'form-control',
+                style: 'width: 100%; padding: 10px; border: 1px solid var(--border-light); border-radius: 6px; font-size: 1rem;'
+            }
+        }) }}
+        {{ form_errors(form.medecin) }}
+    </div>
+
+    <div id="computed-end" style="margin-top: 8px; font-weight: 600; color: var(--muted); min-height: 20px;"></div>
+    
+    <button class="btn btn-primary" style="margin-top: 16px; padding: 10px 24px; font-weight: 600;" id="form_submit_btn">
+        {{ button_label|default('Voir les creneaux disponibles') }}
+    </button>
+{{ form_end(form) }}
+
+<script>
+    (function(){
+        function setDateValidation() {
+            var dateEl = document.querySelector('input.js-datepicker');
+            if (!dateEl) return;
+            
+            // Set minimum date to today
+            var today = new Date();
+            var year = today.getFullYear();
+            var month = String(today.getMonth() + 1).padStart(2, '0');
+            var day = String(today.getDate()).padStart(2, '0');
+            var minDate = year + '-' + month + '-' + day;
+            
+            dateEl.setAttribute('min', minDate);
+        }
+
+        function validateForm() {
+            var dateEl = document.querySelector('input.js-datepicker');
+            var medSel = document.querySelector('select[name$="[medecin]"]');
+            var submitBtn = document.querySelector('#form_submit_btn');
+            
+            if (!dateEl || !medSel || !submitBtn) return;
+            
+            var dateValue = dateEl.value;
+            var medValue = medSel.value;
+            
+            // Validate date is not in the past
+            if (dateValue) {
+                var selectedDate = new Date(dateValue + 'T00:00:00');
+                var today = new Date();
+                today.setHours(0, 0, 0, 0);
+                
+                if (selectedDate < today) {
+                    submitBtn.disabled = true;
+                    dateEl.style.borderColor = 'var(--danger)';
+                    return false;
+                } else {
+                    dateEl.style.borderColor = '';
+                }
+            }
+            
+            // Enable/disable submit based on both fields
+            submitBtn.disabled = !dateValue || !medValue;
+            
+            return true;
+        }
+
+        function fetchSlots() {
+            var dateEl = document.querySelector('input.js-datepicker');
+            var medSel = document.querySelector('select[name$="[medecin]"]');
+            if (!dateEl || !medSel) return;
+            
+            var date = dateEl.value;
+            var med = medSel.value;
+            if (!date || !med) return;
+            
+            fetch('/medecin/' + med + '/available-slots?date=' + encodeURIComponent(date))
+                .then(r => r.json())
+                .then(data => {
+                    // If no slots available, disable submit and show warning
+                    if (!data || data.length === 0) {
+                        var submitBtn = document.querySelector('#form_submit_btn');
+                        if (submitBtn) {
+                            submitBtn.disabled = true;
+                        }
+                        if (computed) {
+                            computed.textContent = 'Aucun creneau disponible cette date';
+                            computed.style.color = 'var(--danger)';
+                        }
+                    } else {
+                        var submitBtn = document.querySelector('#form_submit_btn');
+                        if (submitBtn) {
+                            submitBtn.disabled = false;
+                        }
+                        var computed = document.querySelector('#computed-end');
+                        if (computed) {
+                            computed.textContent = data.length + ' creneau(x) disponible(s)';
+                            computed.style.color = 'var(--success)';
+                        }
+                    }
+                }).catch(console.error);
+        }
+
+        // Set initial validation
+        setDateValidation();
+        validateForm();
+        
+        // Listen to changes
+        document.addEventListener('change', function(e){
+            if (e.target.matches('.js-datepicker')) {
+                validateForm();
+                fetchSlots();
+            }
+            if (e.target.matches('select[name$="[medecin]"]')) {
+                validateForm();
+                fetchSlots();
+            }
+        });
+
+        // Also listen to input for date picker
+        document.addEventListener('input', function(e){
+            if (e.target.matches('.js-datepicker')) {
+                validateForm();
+                fetchSlots();
+            }
+        });
+
+        // Initial fetch
+        fetchSlots();
+    })();
+</script>
