@@ -3,37 +3,36 @@ import {
   View,
   Text,
   StyleSheet,
-  ActivityIndicator,
   ScrollView,
-  TouchableOpacity,
   Alert,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import apiClient from '../api/client';
+import { useTheme } from '../theme';
+import { ETAT_STATUS_MAP } from '../theme/colors';
+import { formatDateComplete, formatHeure } from '../utils/date';
 import EtatBadge from '../components/EtatBadge';
+import Button from '../components/ui/Button';
+import { RdvCardSkeleton } from '../components/ui/SkeletonLoader';
+import EmptyState from '../components/ui/EmptyState';
+import { showToast } from '../components/ui/Toast';
 
-function formatDateComplete(isoString) {
-  const date = new Date(isoString);
-  return date.toLocaleDateString('fr-FR', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-  });
-}
+const ETATS_ANNULABLES = [1, 2];
 
-function formatHeure(isoString) {
-  const date = new Date(isoString);
-  return date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
-}
-
-const ETATS_ANNULABLES = [1, 2]; // demandé, confirmé
+const INFO_ICONS = {
+  heure:   'time-outline',
+  medecin: 'medical-outline',
+  patient: 'person-outline',
+};
 
 export default function DetailRdvScreen({ route, navigation }) {
   const { rdvId } = route.params;
-  const [rdv, setRdv] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const { colors, typography, spacing, shadows } = useTheme();
+
+  const [rdv, setRdv]           = useState(null);
+  const [loading, setLoading]   = useState(true);
   const [cancelling, setCancelling] = useState(false);
-  const [error, setError] = useState(null);
+  const [error, setError]       = useState(null);
 
   useEffect(() => {
     apiClient
@@ -56,13 +55,12 @@ export default function DetailRdvScreen({ route, navigation }) {
             setCancelling(true);
             try {
               await apiClient.post(`/api/mes-rendez-vous/${rdvId}/cancel`);
-              Alert.alert('Succès', 'Le rendez-vous a bien été annulé.', [
-                { text: 'OK', onPress: () => navigation.goBack() },
-              ]);
+              showToast.success('Rendez-vous annulé', 'Votre rendez-vous a bien été annulé.');
+              setTimeout(() => navigation.goBack(), 800);
             } catch (e) {
               Alert.alert(
                 'Erreur',
-                e.response?.data?.error ?? 'Impossible d\'annuler ce rendez-vous.'
+                e.response?.data?.error ?? "Impossible d'annuler ce rendez-vous."
               );
             } finally {
               setCancelling(false);
@@ -74,136 +72,139 @@ export default function DetailRdvScreen({ route, navigation }) {
   };
 
   if (loading) {
-    return <ActivityIndicator size="large" color="#1a73e8" style={{ flex: 1, marginTop: 60 }} />;
-  }
-
-  if (error || !rdv) {
     return (
-      <View style={styles.centered}>
-        <Text style={styles.errorText}>{error ?? 'Rendez-vous introuvable.'}</Text>
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <View style={{ padding: spacing.md }}>
+          <RdvCardSkeleton />
+          <RdvCardSkeleton />
+        </View>
       </View>
     );
   }
 
-  const canCancel = ETATS_ANNULABLES.includes(rdv.etat.id);
+  if (error || !rdv) {
+    return (
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <EmptyState
+          icon="alert-circle-outline"
+          title="Rendez-vous introuvable"
+          description={error ?? 'Ce rendez-vous est introuvable.'}
+          actionLabel="Retour"
+          onAction={() => navigation.goBack()}
+        />
+      </View>
+    );
+  }
+
+  const canCancel    = ETATS_ANNULABLES.includes(rdv.etat.id);
+  const statusKey    = ETAT_STATUS_MAP[rdv.etat.id];
+  const accentColor  = statusKey ? colors.status[statusKey]?.dot : colors.border;
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <ScrollView
+      style={[styles.container, { backgroundColor: colors.background }]}
+      contentContainerStyle={{ padding: spacing.md }}
+    >
       {/* En-tête */}
-      <View style={styles.header}>
-        <Text style={styles.dateText}>{formatDateComplete(rdv.debut)}</Text>
+      <View
+        style={[
+          styles.card,
+          { backgroundColor: colors.surface, borderTopColor: accentColor },
+          shadows.sm,
+        ]}
+      >
+        <Text
+          style={[typography.h3, { color: colors.text.primary, textTransform: 'capitalize', marginBottom: spacing.sm }]}
+          accessibilityRole="header"
+        >
+          {formatDateComplete(rdv.debut)}
+        </Text>
         <EtatBadge etat={rdv.etat} />
       </View>
 
       {/* Informations */}
-      <View style={styles.section}>
-        <InfoRow label="Heure" value={`${formatHeure(rdv.debut)} – ${formatHeure(rdv.fin)}`} />
-        <InfoRow label="Médecin" value={`Dr ${rdv.medecin.prenom} ${rdv.medecin.nom}`} />
-        <InfoRow label="Patient" value={`${rdv.patient.prenom} ${rdv.patient.nom}`} />
+      <View style={[styles.card, { backgroundColor: colors.surface, marginTop: spacing.md }, shadows.sm]}>
+        <InfoRow
+          icon={INFO_ICONS.heure}
+          label="Heure"
+          value={`${formatHeure(rdv.debut)} – ${formatHeure(rdv.fin)}`}
+          colors={colors}
+          typography={typography}
+          spacing={spacing}
+        />
+        <View style={[styles.divider, { backgroundColor: colors.border }]} />
+        <InfoRow
+          icon={INFO_ICONS.medecin}
+          label="Médecin"
+          value={`Dr ${rdv.medecin.prenom} ${rdv.medecin.nom}`}
+          colors={colors}
+          typography={typography}
+          spacing={spacing}
+        />
+        <View style={[styles.divider, { backgroundColor: colors.border }]} />
+        <InfoRow
+          icon={INFO_ICONS.patient}
+          label="Patient"
+          value={`${rdv.patient.prenom} ${rdv.patient.nom}`}
+          colors={colors}
+          typography={typography}
+          spacing={spacing}
+        />
       </View>
 
       {/* Bouton annulation */}
       {canCancel && (
-        <TouchableOpacity
-          style={[styles.cancelBtn, cancelling && styles.cancelBtnDisabled]}
+        <Button
+          variant="danger"
+          size="lg"
+          loading={cancelling}
           onPress={handleCancel}
-          disabled={cancelling}
+          style={{ marginTop: spacing.lg, borderRadius: 10 }}
         >
-          {cancelling ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text style={styles.cancelBtnText}>Annuler ce rendez-vous</Text>
-          )}
-        </TouchableOpacity>
+          Annuler ce rendez-vous
+        </Button>
       )}
     </ScrollView>
   );
 }
 
-function InfoRow({ label, value }) {
+function InfoRow({ icon, label, value, colors, typography, spacing }) {
   return (
-    <View style={styles.infoRow}>
-      <Text style={styles.infoLabel}>{label}</Text>
-      <Text style={styles.infoValue}>{value}</Text>
+    <View style={[styles.infoRow, { paddingVertical: spacing.sm + 2 }]}>
+      <Ionicons
+        name={icon}
+        size={18}
+        color={colors.primary}
+        style={{ marginRight: spacing.sm + 2 }}
+        accessibilityElementsHidden
+      />
+      <Text style={[typography.caption, { color: colors.text.secondary, width: 64 }]}>
+        {label}
+      </Text>
+      <Text
+        style={[typography.bodyMedium, { color: colors.text.primary, flex: 1, textAlign: 'right' }]}
+        accessibilityLabel={`${label}: ${value}`}
+      >
+        {value}
+      </Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f0f4f8',
-  },
-  content: {
-    padding: 20,
-  },
-  centered: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 24,
-  },
-  header: {
-    backgroundColor: '#fff',
+  container: { flex: 1 },
+  card: {
     borderRadius: 12,
-    padding: 20,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOpacity: 0.07,
-    shadowRadius: 6,
-    elevation: 3,
-    gap: 10,
-  },
-  dateText: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#1a1a1a',
-    textTransform: 'capitalize',
-  },
-  section: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 20,
-    shadowColor: '#000',
-    shadowOpacity: 0.07,
-    shadowRadius: 6,
-    elevation: 3,
-    gap: 12,
+    padding: 18,
+    borderTopWidth: 3,
   },
   infoRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
   },
-  infoLabel: {
-    fontSize: 14,
-    color: '#888',
-    fontWeight: '500',
-  },
-  infoValue: {
-    fontSize: 14,
-    color: '#1a1a1a',
-    fontWeight: '600',
-    flex: 1,
-    textAlign: 'right',
-  },
-  cancelBtn: {
-    backgroundColor: '#dc3545',
-    borderRadius: 10,
-    paddingVertical: 14,
-    alignItems: 'center',
-  },
-  cancelBtnDisabled: {
-    opacity: 0.6,
-  },
-  cancelBtnText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  errorText: {
-    color: '#c0392b',
-    fontSize: 15,
+  divider: {
+    height: 1,
+    marginVertical: 2,
+    marginHorizontal: -18,
   },
 });

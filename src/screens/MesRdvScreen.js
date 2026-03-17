@@ -1,32 +1,34 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import {
   View,
-  Text,
   FlatList,
-  StyleSheet,
-  ActivityIndicator,
-  TouchableOpacity,
   ScrollView,
   RefreshControl,
+  StyleSheet,
 } from 'react-native';
 import apiClient from '../api/client';
+import { useTheme } from '../theme';
 import RdvCard from '../components/RdvCard';
+import FilterChip from '../components/ui/FilterChip';
+import EmptyState from '../components/ui/EmptyState';
+import { RdvCardSkeleton } from '../components/ui/SkeletonLoader';
 
 const ETATS = [
-  { id: null, libelle: 'Tous' },
-  { id: 1, libelle: 'Demandé' },
-  { id: 2, libelle: 'Confirmé' },
-  { id: 3, libelle: 'Annulé' },
-  { id: 4, libelle: 'Refusé' },
-  { id: 5, libelle: 'Réalisé' },
+  { id: null,  libelle: 'Tous',     icon: 'list-outline' },
+  { id: 1,     libelle: 'Demandé',  icon: 'time-outline' },
+  { id: 2,     libelle: 'Confirmé', icon: 'checkmark-circle-outline' },
+  { id: 3,     libelle: 'Annulé',   icon: 'close-circle-outline' },
+  { id: 4,     libelle: 'Refusé',   icon: 'ban-outline' },
+  { id: 5,     libelle: 'Réalisé',  icon: 'checkmark-done-outline' },
 ];
 
 export default function MesRdvScreen({ navigation }) {
-  const [rdvs, setRdvs] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { colors, spacing } = useTheme();
+  const [rdvs, setRdvs]             = useState([]);
+  const [loading, setLoading]       = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [etatFiltre, setEtatFiltre] = useState(null);
-  const [error, setError] = useState(null);
+  const [error, setError]           = useState(null);
 
   const fetchRdvs = useCallback(async () => {
     setError(null);
@@ -34,7 +36,7 @@ export default function MesRdvScreen({ navigation }) {
       const params = etatFiltre !== null ? { etat: etatFiltre } : {};
       const response = await apiClient.get('/api/mes-rendez-vous', { params });
       setRdvs(response.data);
-    } catch (e) {
+    } catch {
       setError('Impossible de charger les rendez-vous.');
     }
   }, [etatFiltre]);
@@ -51,40 +53,45 @@ export default function MesRdvScreen({ navigation }) {
   };
 
   return (
-    <View style={styles.container}>
-      {/* Filtre par état */}
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      {/* Filtres */}
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        style={styles.filterRow}
-        contentContainerStyle={styles.filterContent}
+        style={[styles.filterRow, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}
+        contentContainerStyle={[styles.filterContent, { paddingHorizontal: spacing.md, paddingVertical: spacing.sm + 2 }]}
       >
         {ETATS.map((e) => (
-          <TouchableOpacity
+          <FilterChip
             key={String(e.id)}
-            style={[styles.filterBtn, etatFiltre === e.id && styles.filterBtnActive]}
+            label={e.libelle}
+            icon={e.icon}
+            active={etatFiltre === e.id}
             onPress={() => setEtatFiltre(e.id)}
-          >
-            <Text style={[styles.filterText, etatFiltre === e.id && styles.filterTextActive]}>
-              {e.libelle}
-            </Text>
-          </TouchableOpacity>
+          />
         ))}
       </ScrollView>
 
       {loading ? (
-        <ActivityIndicator size="large" color="#1a73e8" style={{ marginTop: 40 }} />
+        <View style={{ paddingTop: spacing.sm }}>
+          {[1, 2, 3, 4].map((k) => <RdvCardSkeleton key={k} />)}
+        </View>
       ) : error ? (
-        <View style={styles.centered}>
-          <Text style={styles.errorText}>{error}</Text>
-          <TouchableOpacity onPress={fetchRdvs}>
-            <Text style={styles.retryText}>Réessayer</Text>
-          </TouchableOpacity>
-        </View>
+        <EmptyState
+          icon="cloud-offline-outline"
+          title="Erreur de connexion"
+          description={error}
+          actionLabel="Réessayer"
+          onAction={fetchRdvs}
+        />
       ) : rdvs.length === 0 ? (
-        <View style={styles.centered}>
-          <Text style={styles.emptyText}>Aucun rendez-vous trouvé.</Text>
-        </View>
+        <EmptyState
+          icon="calendar-outline"
+          title="Aucun rendez-vous"
+          description="Vous n'avez pas encore de rendez-vous dans cette catégorie."
+          actionLabel="Prendre un RDV"
+          onAction={() => navigation.navigate('NouveauRdv')}
+        />
       ) : (
         <FlatList
           data={rdvs}
@@ -95,8 +102,15 @@ export default function MesRdvScreen({ navigation }) {
               onPress={() => navigation.navigate('DetailRdv', { rdvId: item.id })}
             />
           )}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-          contentContainerStyle={{ paddingVertical: 8 }}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor={colors.primary}
+              colors={[colors.primary]}
+            />
+          }
+          contentContainerStyle={{ paddingVertical: spacing.sm }}
         />
       )}
     </View>
@@ -104,56 +118,12 @@ export default function MesRdvScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f0f4f8',
-  },
+  container: { flex: 1 },
   filterRow: {
     maxHeight: 52,
-    backgroundColor: '#fff',
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
   },
   filterContent: {
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    gap: 8,
-  },
-  filterBtn: {
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 20,
-    backgroundColor: '#f0f4f8',
-    marginRight: 6,
-  },
-  filterBtnActive: {
-    backgroundColor: '#1a73e8',
-  },
-  filterText: {
-    fontSize: 13,
-    color: '#555',
-    fontWeight: '500',
-  },
-  filterTextActive: {
-    color: '#fff',
-  },
-  centered: {
-    flex: 1,
     alignItems: 'center',
-    justifyContent: 'center',
-    padding: 24,
-  },
-  emptyText: {
-    color: '#888',
-    fontSize: 15,
-  },
-  errorText: {
-    color: '#c0392b',
-    fontSize: 15,
-    marginBottom: 12,
-  },
-  retryText: {
-    color: '#1a73e8',
-    fontWeight: '600',
   },
 });

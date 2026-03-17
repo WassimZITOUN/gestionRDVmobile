@@ -1,28 +1,35 @@
-import { ActivityIndicator, View, TouchableOpacity, Text, StyleSheet } from 'react-native';
-import { NavigationContainer } from '@react-navigation/native';
+import { ActivityIndicator, View, TouchableOpacity } from 'react-native';
+import { NavigationContainer, DarkTheme, DefaultTheme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
+import { Ionicons } from '@expo/vector-icons';
+import Toast from 'react-native-toast-message';
 
 import { AuthProvider, useAuth } from './src/context/AuthContext';
+import { ThemeProvider, useTheme } from './src/theme';
+import { toastConfig } from './src/components/ui/Toast';
+import CustomTabBar from './src/components/navigation/CustomTabBar';
 import LoginScreen from './src/screens/LoginScreen';
 import MesRdvScreen from './src/screens/MesRdvScreen';
 import DetailRdvScreen from './src/screens/DetailRdvScreen';
 import NouveauRdvScreen from './src/screens/NouveauRdvScreen';
 
 const Stack = createNativeStackNavigator();
-const Tab = createBottomTabNavigator();
+const Tab   = createBottomTabNavigator();
 
-// Stack de l'onglet "Mes RDV"
 function MesRdvStack() {
-  const { logout } = useAuth();
+  const { logout }  = useAuth();
+  const { colors }  = useTheme();
+
   return (
     <Stack.Navigator
       screenOptions={{
-        headerStyle: { backgroundColor: '#1a73e8' },
+        headerStyle: { backgroundColor: colors.primary },
         headerTintColor: '#fff',
         headerTitleStyle: { fontWeight: '700' },
+        animation: 'slide_from_right',
       }}
     >
       <Stack.Screen
@@ -31,8 +38,13 @@ function MesRdvStack() {
         options={{
           title: 'Mes rendez-vous',
           headerRight: () => (
-            <TouchableOpacity onPress={logout} style={styles.logoutBtn}>
-              <Text style={styles.logoutText}>Déconnexion</Text>
+            <TouchableOpacity
+              onPress={logout}
+              style={{ paddingHorizontal: 6, paddingVertical: 4 }}
+              accessibilityRole="button"
+              accessibilityLabel="Se déconnecter"
+            >
+              <Ionicons name="log-out-outline" size={22} color="#fff" />
             </TouchableOpacity>
           ),
         }}
@@ -40,22 +52,21 @@ function MesRdvStack() {
       <Stack.Screen
         name="DetailRdv"
         component={DetailRdvScreen}
-        options={{ title: 'Détail du rendez-vous' }}
+        options={{ title: 'Détail du rendez-vous', animation: 'slide_from_right' }}
       />
     </Stack.Navigator>
   );
 }
 
-// Navigation principale (connecté)
 function AppTabs() {
+  const { colors } = useTheme();
   return (
     <Tab.Navigator
+      tabBar={(props) => <CustomTabBar {...props} />}
       screenOptions={{
-        headerStyle: { backgroundColor: '#1a73e8' },
+        headerStyle: { backgroundColor: colors.primary },
         headerTintColor: '#fff',
         headerTitleStyle: { fontWeight: '700' },
-        tabBarActiveTintColor: '#1a73e8',
-        tabBarInactiveTintColor: '#999',
       }}
     >
       <Tab.Screen
@@ -72,14 +83,14 @@ function AppTabs() {
   );
 }
 
-// Racine : redirige selon authentification
 function RootNavigator() {
   const { token, loading } = useAuth();
+  const { colors } = useTheme();
 
   if (loading) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size="large" color="#1a73e8" />
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background }}>
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
@@ -95,31 +106,38 @@ function RootNavigator() {
   );
 }
 
-const styles = StyleSheet.create({
-  logoutBtn: {
-    marginRight: 4,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.7)',
-  },
-  logoutText: {
-    color: '#fff',
-    fontSize: 13,
-    fontWeight: '600',
-  },
-});
+function AppWithTheme() {
+  const { isDark, colors } = useTheme();
+
+  const navTheme = {
+    ...(isDark ? DarkTheme : DefaultTheme),
+    colors: {
+      ...(isDark ? DarkTheme.colors : DefaultTheme.colors),
+      primary:    colors.primary,
+      background: colors.background,
+      card:       colors.surface,
+      text:       colors.text.primary,
+      border:     colors.border,
+    },
+  };
+
+  return (
+    <NavigationContainer theme={navTheme}>
+      <RootNavigator />
+      <StatusBar style={isDark ? 'light' : 'dark'} />
+    </NavigationContainer>
+  );
+}
 
 export default function App() {
   return (
     <SafeAreaProvider>
-      <AuthProvider>
-        <NavigationContainer>
-          <RootNavigator />
-        </NavigationContainer>
-        <StatusBar style="light" />
-      </AuthProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <AppWithTheme />
+        </AuthProvider>
+        <Toast config={toastConfig} />
+      </ThemeProvider>
     </SafeAreaProvider>
   );
 }
