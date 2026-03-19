@@ -32,6 +32,8 @@ abstract class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(length: 180, unique: true)]
     private ?string $email = null;
 
+    #[ORM\Column(length: 180, unique: true, nullable: true)]
+    private ?string $uid = null;
 
     /**
      * @var list<string> The user roles
@@ -67,6 +69,18 @@ abstract class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setEmail(string $email): static
     {
         $this->email = $email;
+
+        return $this;
+    }
+
+    public function getUid(): ?string
+    {
+        return $this->uid;
+    }
+
+    public function setUid(?string $uid): static
+    {
+        $this->uid = $uid;
 
         return $this;
     }

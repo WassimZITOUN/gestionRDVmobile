@@ -26,19 +26,14 @@ security:
             security: false
 
         # ----------------------
-        # Firewall pour l'API LOGIN JWT
+        # Firewall pour l'API LOGIN JWT (dual auth : email/bcrypt ou uid/LDAP)
         # DOIT être avant 'main' et 'api', car Symfony utilise le premier firewall correspondant
         login:
             pattern: ^/api/login          # toutes les requêtes vers /api/login
             stateless: true               # pas de session, JWT stateless
             provider: app_user_provider   # source des utilisateurs
-            json_login:
-                check_path: /api/login   # route à intercepter pour l'authentification
-                username_path: email     # clé JSON envoyée par le client pour l'identifiant
-                password_path: password  # clé JSON envoyée par le client pour le mot de passe
-                # Handlers LexikJWT pour gérer le succès ou l'échec
-                success_handler: lexik_jwt_authentication.handler.authentication_success
-                failure_handler: lexik_jwt_authentication.handler.authentication_failure
+            custom_authenticators:
+                - App\Security\DualApiAuthenticator
 
         # ----------------------
         # Firewall pour toutes les routes de l'API
@@ -49,14 +44,12 @@ security:
             jwt: ~                        # activation de la vérification du JWT via Lexik
 
         # ----------------------
-        # Firewall pour le site web classique
+        # Firewall pour le site web classique (dual auth : email/bcrypt ou uid/LDAP)
         main:
             lazy: true                   # l'utilisateur est chargé seulement si nécessaire
             provider: app_user_provider
-            form_login:
-                login_path: app_login    # page de login du site web
-                check_path: app_login    # URL interceptée pour vérifier le login
-                enable_csrf: true        # protection CSRF activée
+            custom_authenticators:
+                - App\Security\DualAuthAuthenticator
             logout:
                 path: app_logout         # URL pour se déconnecter
 

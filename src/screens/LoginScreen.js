@@ -19,10 +19,10 @@ export default function LoginScreen() {
   const { login } = useAuth();
   const { colors, typography, spacing, shadows } = useTheme();
 
-  const [email, setEmail]       = useState('');
-  const [password, setPassword] = useState('');
-  const [loading, setLoading]   = useState(false);
-  const [errors, setErrors]     = useState({});
+  const [identifier, setIdentifier] = useState('');
+  const [password, setPassword]     = useState('');
+  const [loading, setLoading]       = useState(false);
+  const [errors, setErrors]         = useState({});
 
   // Animation d'entrée
   const cardAnim = useRef(new Animated.Value(0)).current;
@@ -49,8 +49,8 @@ export default function LoginScreen() {
 
   const validate = () => {
     const newErrors = {};
-    if (!email.trim())    newErrors.email    = 'Veuillez saisir votre email.';
-    if (!password.trim()) newErrors.password = 'Veuillez saisir votre mot de passe.';
+    if (!identifier.trim()) newErrors.identifier = 'Veuillez saisir votre identifiant.';
+    if (!password.trim())   newErrors.password   = 'Veuillez saisir votre mot de passe.';
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -60,11 +60,11 @@ export default function LoginScreen() {
     setLoading(true);
     setErrors({});
     try {
-      await login(email.trim(), password);
+      await login(identifier.trim(), password);
     } catch (error) {
       const message =
         error.response?.status === 401
-          ? 'Email ou mot de passe incorrect.'
+          ? 'Identifiant ou mot de passe incorrect.'
           : 'Impossible de se connecter. Vérifiez votre connexion.';
       setErrors({ global: message });
     } finally {
@@ -123,15 +123,14 @@ export default function LoginScreen() {
             )}
 
             <Input
-              label="Adresse email"
-              icon="mail-outline"
-              placeholder="exemple@email.com"
-              keyboardType="email-address"
+              label="Identifiant"
+              icon="person-outline"
+              placeholder="email@exemple.com ou identifiant LDAP"
               autoCapitalize="none"
               autoCorrect={false}
-              value={email}
-              onChangeText={(t) => { setEmail(t); setErrors((e) => ({ ...e, email: null })); }}
-              error={errors.email}
+              value={identifier}
+              onChangeText={(t) => { setIdentifier(t); setErrors((e) => ({ ...e, identifier: null })); }}
+              error={errors.identifier}
             />
 
             <Input

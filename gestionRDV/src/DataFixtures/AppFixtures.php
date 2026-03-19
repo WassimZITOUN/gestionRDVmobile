@@ -41,6 +41,9 @@ class AppFixtures extends Fixture
         // 6. Créer des disponibilités récurrentes
         $nbDisponibilites = $this->createDisponibilitesRecurrentes($manager, $medecins);
 
+        // 7. Creer des utilisateurs LDAP (uid, sans mot de passe bcrypt)
+        $ldapUsers = $this->createLdapUsers($manager);
+
         $manager->flush();
 
         echo "Fixtures chargees avec succes!\n";
@@ -50,10 +53,15 @@ class AppFixtures extends Fixture
         echo "   - " . count($patients) . " patients crees\n";
         echo "   - " . count($assistants) . " assistants crees\n";
         echo "   - " . $nbDisponibilites . " disponibilites recurrentes creees\n";
-        echo "\nComptes de test:\n";
+        echo "   - " . count($ldapUsers) . " utilisateurs LDAP crees\n";
+        echo "\nComptes de test (classique - email/bcrypt):\n";
         echo "   Medecin: medecin1@test.fr / password123\n";
         echo "   Patient: patient1@test.fr / password123\n";
         echo "   Assistant: assistant1@test.fr / password123\n";
+        echo "\nComptes de test (LDAP - uid/mdp LDAP):\n";
+        echo "   Patient LDAP: jean.dupont (mot de passe gere par le serveur LDAP)\n";
+        echo "   Medecin LDAP: dr.martin (mot de passe gere par le serveur LDAP)\n";
+        echo "   Assistant LDAP: aide.leroy (mot de passe gere par le serveur LDAP)\n";
     }
 
     private function createEtats(ObjectManager $manager): array
@@ -288,5 +296,47 @@ class AppFixtures extends Fixture
         }
 
         return count($data);
+    }
+
+    private function createLdapUsers(ObjectManager $manager): array
+    {
+        $ldapUsers = [];
+
+        // Patient LDAP
+        $patient = new Patient();
+        $patient->setUid('jean.dupont');
+        $patient->setEmail('jean.dupont@slam.lab');
+        $patient->setNom('Dupont');
+        $patient->setPrenom('Jean');
+        $patient->setRoles(['ROLE_PATIENT']);
+        // Pas de mot de passe bcrypt : auth via LDAP
+        $patient->setPassword('');
+        $manager->persist($patient);
+        $ldapUsers[] = $patient;
+
+        // Medecin LDAP
+        $medecin = new Medecin();
+        $medecin->setUid('dr.martin');
+        $medecin->setEmail('dr.martin@slam.lab');
+        $medecin->setNom('Martin');
+        $medecin->setPrenom('Pierre');
+        $medecin->setRoles(['ROLE_MEDECIN']);
+        $medecin->setPassword('');
+        $manager->persist($medecin);
+        $ldapUsers[] = $medecin;
+
+        // Assistant LDAP
+        $assistant = new Assistant();
+        $assistant->setUid('aide.leroy');
+        $assistant->setEmail('aide.leroy@slam.lab');
+        $assistant->setNom('Leroy');
+        $assistant->setPrenom('Sophie');
+        $assistant->setRoles(['ROLE_ASSISTANT']);
+        $assistant->setPassword('');
+        $assistant->setMedecin($medecin);
+        $manager->persist($assistant);
+        $ldapUsers[] = $assistant;
+
+        return $ldapUsers;
     }
 }

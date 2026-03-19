@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//Users/wassim/Documents/Etudes/BTS/Projet/RDVGestion/**)",
+      "Bash(find /Users/wassim/Documents/Etudes/BTS/Projet/RDVGestion/gestion-rdv-mobile -name *.js -path */src/* -type f)",
+      "Bash(find /Users/wassim/Documents/Etudes/BTS/Projet/RDVGestion/gestion-rdv-mobile/src -type f \\\\\\(-name *.js -o -name *.ts -o -name *.tsx \\\\\\))",
+      "Bash(git checkout:*)",
+      "Bash(composer require:*)",
+      "Bash(npm install:*)",
+      "Bash(php bin/console make:migration)",
+      "Bash(php bin/console doctrine:migrations:migrate --no-interaction)",
+      "Bash(ldapadd -x -H ldap://192.168.1.106 -D \"cn=admin,dc=slam,dc=lab\" -w admin -f /Users/wassim/Documents/Etudes/BTS/Projet/RDVGestion/gestion-rdv-mobile/gestionRDV/ldap/jeu_essai.ldif)",
+      "Bash(echo \"EXIT: $?\")"
+    ]
+  }
+}

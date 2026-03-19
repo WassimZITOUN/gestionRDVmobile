@@ -1,0 +1,26 @@
+# Patient de test
+dn: uid=jean.dupont,ou=people,dc=slam,dc=lab
+objectClass: inetOrgPerson
+uid: jean.dupont
+cn: Jean Dupont
+sn: Dupont
+givenName: Jean
+userPassword: patient123
+
+# Medecin de test
+dn: uid=dr.martin,ou=people,dc=slam,dc=lab
+objectClass: inetOrgPerson
+uid: dr.martin
+cn: Dr Martin
+sn: Martin
+givenName: Pierre
+userPassword: medecin123
+
+# Assistant de test
+dn: uid=aide.leroy,ou=people,dc=slam,dc=lab
+objectClass: inetOrgPerson
+uid: aide.leroy
+cn: Aide Leroy
+sn: Leroy
+givenName: Sophie
+userPassword: assistant123
