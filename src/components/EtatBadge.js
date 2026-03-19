@@ -1,33 +1,46 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '../theme';
+import { ETAT_STATUS_MAP, ETAT_LABELS } from '../theme/colors';
 
-const ETAT_COLORS = {
-  1: { bg: '#fff3cd', text: '#856404', label: 'Demandé' },    // demandé
-  2: { bg: '#d1e7dd', text: '#0f5132', label: 'Confirmé' },   // confirmé
-  3: { bg: '#f8d7da', text: '#842029', label: 'Annulé' },     // annulé
-  4: { bg: '#f8d7da', text: '#842029', label: 'Refusé' },     // refusé
-  5: { bg: '#cff4fc', text: '#055160', label: 'Réalisé' },    // réalisé
+const ETAT_ICONS = {
+  pending:   'time-outline',
+  confirmed: 'checkmark-circle-outline',
+  cancelled: 'close-circle-outline',
+  refused:   'ban-outline',
+  completed: 'checkmark-done-outline',
 };
 
 export default function EtatBadge({ etat }) {
-  const config = ETAT_COLORS[etat?.id] ?? { bg: '#e9ecef', text: '#495057', label: etat?.libelle ?? '?' };
+  const { colors, typography } = useTheme();
+
+  const key    = ETAT_STATUS_MAP[etat?.id] ?? null;
+  const config = key ? colors.status[key] : { bg: colors.surfaceVariant, text: colors.text.secondary, dot: colors.text.disabled };
+  const label  = ETAT_LABELS[etat?.id] ?? etat?.libelle ?? '?';
+  const icon   = ETAT_ICONS[key] ?? 'ellipse-outline';
 
   return (
     <View style={[styles.badge, { backgroundColor: config.bg }]}>
-      <Text style={[styles.text, { color: config.text }]}>{config.label}</Text>
+      <Ionicons
+        name={icon}
+        size={11}
+        color={config.text}
+        style={{ marginRight: 4 }}
+        accessibilityElementsHidden
+      />
+      <Text style={[typography.caption, { color: config.text }]}>{label}</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   badge: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: 10,
-    paddingVertical: 3,
+    paddingVertical: 4,
     borderRadius: 12,
     alignSelf: 'flex-start',
-  },
-  text: {
-    fontSize: 12,
-    fontWeight: '600',
   },
 });

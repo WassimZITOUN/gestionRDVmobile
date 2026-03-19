@@ -1,30 +1,64 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
-  Alert,
+  Animated,
+  Image,
+  ScrollView,
+  StyleSheet,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../theme';
+import Button from '../components/ui/Button';
+import Input from '../components/ui/Input';
 
 export default function LoginScreen() {
   const { login } = useAuth();
-  const [email, setEmail] = useState('');
+  const { colors, typography, spacing, shadows } = useTheme();
+
+  const [email, setEmail]       = useState('');
   const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading]   = useState(false);
+  const [errors, setErrors]     = useState({});
+
+  // Animation d'entrée
+  const cardAnim = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    Animated.spring(cardAnim, {
+      toValue: 1,
+      friction: 7,
+      tension: 60,
+      useNativeDriver: true,
+    }).start();
+  }, [cardAnim]);
+
+  const cardStyle = {
+    opacity: cardAnim,
+    transform: [
+      {
+        translateY: cardAnim.interpolate({
+          inputRange: [0, 1],
+          outputRange: [40, 0],
+        }),
+      },
+    ],
+  };
+
+  const validate = () => {
+    const newErrors = {};
+    if (!email.trim())    newErrors.email    = 'Veuillez saisir votre email.';
+    if (!password.trim()) newErrors.password = 'Veuillez saisir votre mot de passe.';
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleLogin = async () => {
-    if (!email.trim() || !password.trim()) {
-      Alert.alert('Erreur', 'Veuillez renseigner votre email et mot de passe.');
-      return;
-    }
-
+    if (!validate()) return;
     setLoading(true);
+    setErrors({});
     try {
       await login(email.trim(), password);
     } catch (error) {
@@ -32,109 +66,131 @@ export default function LoginScreen() {
         error.response?.status === 401
           ? 'Email ou mot de passe incorrect.'
           : 'Impossible de se connecter. Vérifiez votre connexion.';
-      Alert.alert('Connexion échouée', message);
+      setErrors({ global: message });
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    <LinearGradient
+      colors={[colors.primaryLight, colors.background]}
+      style={styles.gradient}
     >
-      <View style={styles.card}>
-        <Text style={styles.title}>RDV Gestion</Text>
-        <Text style={styles.subtitle}>Connexion patient</Text>
-
-        <TextInput
-          style={styles.input}
-          placeholder="Email"
-          placeholderTextColor="#999"
-          keyboardType="email-address"
-          autoCapitalize="none"
-          value={email}
-          onChangeText={setEmail}
-        />
-
-        <TextInput
-          style={styles.input}
-          placeholder="Mot de passe"
-          placeholderTextColor="#999"
-          secureTextEntry
-          value={password}
-          onChangeText={setPassword}
-        />
-
-        <TouchableOpacity
-          style={[styles.button, loading && styles.buttonDisabled]}
-          onPress={handleLogin}
-          disabled={loading}
+      <KeyboardAvoidingView
+        style={styles.flex}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <ScrollView
+          contentContainerStyle={[styles.scroll, { padding: spacing.lg }]}
+          keyboardShouldPersistTaps="handled"
         >
-          {loading ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text style={styles.buttonText}>Se connecter</Text>
-          )}
-        </TouchableOpacity>
-      </View>
-    </KeyboardAvoidingView>
+          {/* Logo / icône */}
+          <View style={styles.logoContainer}>
+            <View style={[styles.logoCircle, { backgroundColor: colors.primary }, shadows.md]}>
+              <Image
+                source={require('../../assets/icon.png')}
+                style={styles.logo}
+                accessibilityElementsHidden
+              />
+            </View>
+          </View>
+
+          {/* Carte */}
+          <Animated.View
+            style={[
+              styles.card,
+              { backgroundColor: colors.surface },
+              shadows.lg,
+              cardStyle,
+            ]}
+          >
+            <Text style={[typography.h1, { color: colors.primary, textAlign: 'center', marginBottom: 4 }]}>
+              RDV Gestion
+            </Text>
+            <Text style={[typography.body, { color: colors.text.secondary, textAlign: 'center', marginBottom: spacing.lg + 4 }]}>
+              Connexion patient
+            </Text>
+
+            {/* Erreur globale */}
+            {errors.global && (
+              <View
+                style={[styles.globalError, { backgroundColor: colors.errorLight, borderColor: colors.error }]}
+                accessibilityRole="alert"
+              >
+                <Text style={[typography.caption, { color: colors.error }]}>{errors.global}</Text>
+              </View>
+            )}
+
+            <Input
+              label="Adresse email"
+              icon="mail-outline"
+              placeholder="exemple@email.com"
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoCorrect={false}
+              value={email}
+              onChangeText={(t) => { setEmail(t); setErrors((e) => ({ ...e, email: null })); }}
+              error={errors.email}
+            />
+
+            <Input
+              label="Mot de passe"
+              icon="lock-closed-outline"
+              placeholder="Votre mot de passe"
+              secureTextEntry
+              value={password}
+              onChangeText={(t) => { setPassword(t); setErrors((e) => ({ ...e, password: null })); }}
+              error={errors.password}
+            />
+
+            <Button
+              variant="primary"
+              size="lg"
+              loading={loading}
+              onPress={handleLogin}
+              style={{ marginTop: spacing.sm, borderRadius: 10 }}
+            >
+              Se connecter
+            </Button>
+          </Animated.View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f0f4f8',
+  gradient: { flex: 1 },
+  flex:     { flex: 1 },
+  scroll: {
+    flexGrow: 1,
     justifyContent: 'center',
-    padding: 24,
+  },
+  logoContainer: {
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  logoCircle: {
+    width: 80,
+    height: 80,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  logo: {
+    width: 80,
+    height: 80,
   },
   card: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
+    borderRadius: 16,
     padding: 28,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
   },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#1a73e8',
-    textAlign: 'center',
-    marginBottom: 4,
-  },
-  subtitle: {
-    fontSize: 15,
-    color: '#666',
-    textAlign: 'center',
-    marginBottom: 28,
-  },
-  input: {
+  globalError: {
     borderWidth: 1,
-    borderColor: '#ddd',
     borderRadius: 8,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    fontSize: 15,
-    color: '#333',
+    padding: 10,
     marginBottom: 14,
-    backgroundColor: '#fafafa',
-  },
-  button: {
-    backgroundColor: '#1a73e8',
-    borderRadius: 8,
-    paddingVertical: 14,
-    alignItems: 'center',
-    marginTop: 6,
-  },
-  buttonDisabled: {
-    opacity: 0.6,
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
   },
 });

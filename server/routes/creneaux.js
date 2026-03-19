@@ -80,8 +80,8 @@ router.post('/rendez-vous/nouveau', async (req, res) => {
     return res.status(404).json({ error: 'Médecin introuvable.' });
   }
 
-  // Parser la date de début
-  const debut = new Date(datetime_debut);
+  // Parser la date de début comme UTC (le format envoyé est toISOString sans 'Z')
+  const debut = new Date(datetime_debut.endsWith('Z') ? datetime_debut : datetime_debut + 'Z');
   if (isNaN(debut.getTime())) {
     return res.status(400).json({ error: 'Format de date invalide. Utiliser ISO 8601 : Y-m-d\\TH:i:s' });
   }
