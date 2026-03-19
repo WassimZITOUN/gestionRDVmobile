@@ -122,7 +122,7 @@ export default function NouveauRdvScreen({ navigation }) {
                 datetime_debut: creneau.datetime,
               });
               showToast.success('Rendez-vous demandé !', 'Votre demande a bien été envoyée.');
-              setTimeout(() => navigation.navigate('MesRdv'), 800);
+              setTimeout(() => navigation.navigate('MesRdvTab', { screen: 'MesRdv' }), 800);
             } catch (e) {
               const msg = e.response?.data?.error ?? 'Impossible de créer ce rendez-vous.';
               Alert.alert('Erreur', msg);

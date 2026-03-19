@@ -1,4 +1,4 @@
-import { ActivityIndicator, View, TouchableOpacity } from 'react-native';
+import { ActivityIndicator, Alert, View, Text, TouchableOpacity } from 'react-native';
 import { NavigationContainer, DarkTheme, DefaultTheme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -20,8 +20,8 @@ const Stack = createNativeStackNavigator();
 const Tab   = createBottomTabNavigator();
 
 function MesRdvStack() {
-  const { logout }  = useAuth();
-  const { colors }  = useTheme();
+  const { logout, user } = useAuth();
+  const { colors }       = useTheme();
 
   return (
     <Stack.Navigator
@@ -36,10 +36,30 @@ function MesRdvStack() {
         name="MesRdv"
         component={MesRdvScreen}
         options={{
-          title: 'Mes rendez-vous',
+          headerTitle: () => (
+            <View style={{ alignItems: 'flex-start' }}>
+              <Text style={{ color: '#fff', fontWeight: '700', fontSize: 16 }}>
+                Mes rendez-vous
+              </Text>
+              {user && (
+                <Text style={{ color: 'rgba(255,255,255,0.75)', fontSize: 12 }}>
+                  {user.prenom} {user.nom}
+                </Text>
+              )}
+            </View>
+          ),
           headerRight: () => (
             <TouchableOpacity
-              onPress={logout}
+              onPress={() =>
+                Alert.alert(
+                  'Déconnexion',
+                  'Voulez-vous vraiment vous déconnecter ?',
+                  [
+                    { text: 'Annuler', style: 'cancel' },
+                    { text: 'Déconnecter', style: 'destructive', onPress: logout },
+                  ]
+                )
+              }
               style={{ paddingHorizontal: 6, paddingVertical: 4 }}
               accessibilityRole="button"
               accessibilityLabel="Se déconnecter"

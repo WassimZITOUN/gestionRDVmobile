@@ -9,6 +9,7 @@ const pool = mysql.createPool({
   password: process.env.DB_PASS,
   waitForConnections: true,
   connectionLimit: 10,
+  timezone: '+00:00', // forcer UTC pour que les objets Date JS soient cohérents avec toISOString()
 });
 
 module.exports = pool;
